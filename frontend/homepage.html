@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<htlm lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowling Ball Grid Homepage</title>
+    <link rel="stylesheet" href="styles.css">
+</htlm>
+<body>
+    <header>
+        <h1>ECE 50874: Bowling Ball Grid</h1>
+        <nav>
+            <ul>
+                <li><a href="#about">About</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="controls">
+        <label>
+            X-axis:
+            <select id="x-axis"></select>
+        </label>
+        <label>
+            Y-axis:
+            <select id="y-axis"></select>
+        </label>
+
+        <button id="Update Grid">Update Grid</button>
+    </section>
+
+    <section class="grid-container">
+        <canvas id="gridCanvas" width="600" height="600"></canvas>
+    </section>
+
+    <section id="about">
+        <h2>About the Bowling Ball Grid</h2>
+        <p>The Bowling Ball Grid is a unique and interactive way to visualize data. It allows users to explore complex datasets in a fun and engaging manner.</p>
+    </section>
+
+    <section id="features">
+        <h2>Features</h2>
+        <ul>
+            <li>Interactive Data Visualization</li>
+            <li>User-Friendly Interface</li>
+            <li>Customizable Layouts</li>
+            <li>Real-Time Data Updates</li>
+        </ul>
+    </section>
+
+    <section id="contact">
+        <h2>Contact Us</h2>
+        <p>If you have any questions or would like to learn more about the Bowling Ball Grid, please feel free to reach out to us.</p>
+        <form action="submit_form.php" method="post">
+            <label for="name">Name:</label><br>
+            <input type="text" id="name" name="name"><br><br>
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="email"><br><br>
+            <input type="submit" value="Submit">
+        </form>
+    </section>
+
+    <script src="app.js"></script>
+
+    <footer>
+        <p>&copy; 2024 Bowling Ball Grid. All rights reserved.</p>
+    </footer>
