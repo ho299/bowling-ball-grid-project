@@ -2,10 +2,9 @@
 const gridCanvas = document.getElementById('gridCanvas');
 const ctx = gridCanvas.getContext('2d');
 
-// selectors for which numeric fields map to axes, and the update button
+// selectors for which numeric fields map to axes
 const xAxisSelect = document.getElementById('x-axis');
 const yAxisSelect = document.getElementById('y-axis');
-const updateButton = document.getElementById('Update Grid');
 
 // Container where the table of plotted objects will be inserted
 const dataTableDiv = document.getElementById('data-table');
@@ -145,7 +144,7 @@ function drawGridLines() {
 }
 
 // Draw dynamic axis labels and title. Title shows which fields are being compared;
-// X-axis label appears at the bottom, Y-axis label on the left (rotated).
+// X-axis label appears below the grid, Y-axis label to the left of the grid (rotated).
 function drawAxisLabels(xField, yField) {
     const padding = 40;
     ctx.font = '14px Arial';
@@ -153,17 +152,19 @@ function drawAxisLabels(xField, yField) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Title: "xField vs yField"
+    // Title: "xField vs yField" (above the grid)
     const title = `${xField} vs ${yField}`;
-    ctx.fillText(title, gridCanvas.width / 2, 20);
+    ctx.fillText(title, gridCanvas.width / 2, 15);
 
-    // X-axis label (bottom center)
-    ctx.fillText(xField, gridCanvas.width / 2, gridCanvas.height - 5);
+    // X-axis label (below the grid, outside the plot area)
+    ctx.textBaseline = 'top';
+    ctx.fillText(xField, gridCanvas.width / 2, gridCanvas.height - padding + 10);
 
-    // Y-axis label (left side, rotated 90 degrees)
+    // Y-axis label (left of the grid, outside the plot area, rotated 90 degrees)
     ctx.save();
     ctx.translate(15, gridCanvas.height / 2);
     ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'middle';
     ctx.fillText(yField, 0, 0);
     ctx.restore();
 }
@@ -278,13 +279,6 @@ gridCanvas.addEventListener('click', (e) => {
     }
 });
 
-//event listener for plot button
-// When the Update Grid button is pressed refresh the plot and the table.
-updateButton.addEventListener('click', () => {
-    drawGrid();
-    renderTable();
-});
-
 // Dropdown event listeners: redraw automatically when axis selection changes
 // Also prevent both axes from being set to the same field
 xAxisSelect.addEventListener('change', () => {
@@ -316,7 +310,7 @@ themeToggle.addEventListener('click', () => {
     document.body.classList.toggle('dark-mode');
     const isDarkMode = document.body.classList.contains('dark-mode');
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-    themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+    themeToggle.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
 });
 
 // Initialize dark mode from localStorage preference
@@ -324,10 +318,10 @@ function initializeTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
-        themeToggle.textContent = '☀️ Light Mode';
+        themeToggle.textContent = 'Light Mode';
     } else {
         document.body.classList.remove('dark-mode');
-        themeToggle.textContent = '🌙 Dark Mode';
+        themeToggle.textContent = 'Dark Mode';
     }
 }
 
