@@ -1,11 +1,8 @@
-// Script loaded - diagnostic check
-console.log('app.js loaded');
-
-// Canvas and drawing context used for plotting the scatter/grid
+// Canvas and drawing for plotting the scatter/grid
 const gridCanvas = document.getElementById('gridCanvas');
 const ctx = gridCanvas.getContext('2d');
 
-// Controls: selectors for which numeric fields map to axes, and the update button
+// selectors for which numeric fields map to axes, and the update button
 const xAxisSelect = document.getElementById('x-axis');
 const yAxisSelect = document.getElementById('y-axis');
 const updateButton = document.getElementById('Update Grid');
@@ -13,16 +10,17 @@ const updateButton = document.getElementById('Update Grid');
 // Container where the table of plotted objects will be inserted
 const dataTableDiv = document.getElementById('data-table');
 
+// Dark mode toggle button
+const themeToggle = document.getElementById('theme-toggle');
+
 // Application state
 let bowlingBalls = [];       // array of objects (each ball with properties)
 let numericFields = [];     // detected numeric property names used for axes
 let selectedIndex = null;   // index of the currently selected ball (or null)
 
 //fetch data from backend
-// Fetch data from backend (placeholder uses a static array).
-// Replace this with a real fetch to your API when available.
 async function fetchData() {
-    // TODO: fetch JSON from server, e.g. `await fetch('/api/balls').then(r=>r.json())`
+    // TODO: fetch JSON from server
     
     //placeholder data until backend is implemented
     bowlingBalls = [
@@ -287,5 +285,52 @@ updateButton.addEventListener('click', () => {
     renderTable();
 });
 
-// Initial load: fetch data, detect fields, populate controls and draw
+// Dropdown event listeners: redraw automatically when axis selection changes
+// Also prevent both axes from being set to the same field
+xAxisSelect.addEventListener('change', () => {
+    // If X-axis is now the same as Y-axis, auto-switch Y-axis to another field
+    if (xAxisSelect.value === yAxisSelect.value) {
+        const alternative = numericFields.find(f => f !== xAxisSelect.value);
+        if (alternative) {
+            yAxisSelect.value = alternative;
+        }
+    }
+    drawGrid();
+    renderTable();
+});
+
+yAxisSelect.addEventListener('change', () => {
+    // If Y-axis is now the same as X-axis, auto-switch X-axis to another field
+    if (yAxisSelect.value === xAxisSelect.value) {
+        const alternative = numericFields.find(f => f !== yAxisSelect.value);
+        if (alternative) {
+            xAxisSelect.value = alternative;
+        }
+    }
+    drawGrid();
+    renderTable();
+});
+
+// Dark mode toggle handler: toggle class on body and save preference to localStorage
+themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    themeToggle.textContent = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+});
+
+// Initialize dark mode from localStorage preference
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = '☀️ Light Mode';
+    } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.textContent = '🌙 Dark Mode';
+    }
+}
+
+// Initial load: set theme preference, then fetch data, detect fields, populate controls and draw
+initializeTheme();
 fetchData();
