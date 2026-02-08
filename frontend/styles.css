@@ -16,13 +16,40 @@ header {
     margin-bottom: 20px;
 }
 
-.grid_container {
+.grid-container {
     background: #fff;
-    border: 1px soldi #ccc;
+    border: 1px solid #ccc;
     padding: 10px;
-    width: firt-content;
+    display: inline-block;
 }
 
 canvas {
     border: 1px solid #333;
+}
+
+.table-container {
+    margin-top: 20px;
+    background: #fff;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+#data-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#data-table th,
+#data-table td {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.selected-row {
+    background-color: #fffae6;
+}
+
+.point-highlight {
+    stroke: #ff0000;
 }

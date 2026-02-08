@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<htlm lang="en">
+<html lang="en">
 <head>
+    <!-- Page metadata -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bowling Ball Grid Homepage</title>
+    <!-- Main stylesheet -->
     <link rel="stylesheet" href="styles.css">
-</htlm>
+</head>
 <body>
+    <!-- Header: site title and primary navigation -->
     <header>
         <h1>ECE 50874: Bowling Ball Grid</h1>
         <nav>
@@ -18,6 +21,7 @@
         </nav>
     </header>
 
+    <!-- Controls: select which numeric fields map to X and Y axes and update the plot -->
     <section class="controls">
         <label>
             X-axis:
@@ -28,13 +32,23 @@
             <select id="y-axis"></select>
         </label>
 
+        <!-- Button triggers redraw of the canvas based on the selected axes -->
         <button id="Update Grid">Update Grid</button>
     </section>
 
+    <!-- Grid container: canvas used as the plotting surface for the scatter/grid -->
     <section class="grid-container">
         <canvas id="gridCanvas" width="600" height="600"></canvas>
     </section>
 
+    <!-- Table of plotted objects: dynamically populated by app.js with the plotted rows -->
+    <section class="table-container">
+        <h2>Plotted Objects</h2>
+        <!-- JavaScript will insert a <table> here showing each object's fields -->
+        <div id="data-table"></div>
+    </section>
+
+    <!-- Informational sections: static content describing the project -->
     <section id="about">
         <h2>About the Bowling Ball Grid</h2>
         <p>The Bowling Ball Grid is a unique and interactive way to visualize data. It allows users to explore complex datasets in a fun and engaging manner.</p>
@@ -50,6 +64,7 @@
         </ul>
     </section>
 
+    <!-- Contact form: placeholder form for user messages -->
     <section id="contact">
         <h2>Contact Us</h2>
         <p>If you have any questions or would like to learn more about the Bowling Ball Grid, please feel free to reach out to us.</p>
@@ -62,8 +77,12 @@
         </form>
     </section>
 
+    <!-- Main application script: handles data, plotting and table interactions -->
     <script src="app.js"></script>
 
+    <!-- Footer: copyright and small print -->
     <footer>
         <p>&copy; 2024 Bowling Ball Grid. All rights reserved.</p>
     </footer>
+</body>
+</html>
