@@ -37,7 +37,7 @@ async function fetchData() {
             optimal_lane_condition: 8
         },
         {
-            name: "Ball b",
+            name: "Ball B",
             weight: 15,
             coverstock: 10,
             core_design: 100,
@@ -47,7 +47,7 @@ async function fetchData() {
             optimal_lane_condition: 10
         },
         {
-            name: "Ball A",
+            name: "Ball C",
             weight: 10,
             coverstock: 5,
             core_design: 80,
@@ -110,6 +110,7 @@ function drawGrid() {
     const yField = yAxisSelect.value;
 
     drawGridLines();
+    drawAxisLabels(xField, yField);
     plotBowlingBalls(xField, yField);
 }
 
@@ -143,6 +144,30 @@ function drawGridLines() {
     ctx.moveTo(0, 0);
     ctx.lineTo(0, gridCanvas.height);
     ctx.stroke();
+}
+
+// Draw dynamic axis labels and title. Title shows which fields are being compared;
+// X-axis label appears at the bottom, Y-axis label on the left (rotated).
+function drawAxisLabels(xField, yField) {
+    const padding = 40;
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Title: "xField vs yField"
+    const title = `${xField} vs ${yField}`;
+    ctx.fillText(title, gridCanvas.width / 2, 20);
+
+    // X-axis label (bottom center)
+    ctx.fillText(xField, gridCanvas.width / 2, gridCanvas.height - 5);
+
+    // Y-axis label (left side, rotated 90 degrees)
+    ctx.save();
+    ctx.translate(15, gridCanvas.height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yField, 0, 0);
+    ctx.restore();
 }
 
 // Plot each bowling ball as a point on the canvas. Points are scaled to the
