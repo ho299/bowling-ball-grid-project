@@ -1,5 +1,5 @@
+/* Light mode colors */
 :root {
-    /* Light mode (default) */
     --bg-primary: #f4f4f4;
     --bg-secondary: #ffffff;
     --text-primary: #000000;
@@ -9,12 +9,13 @@
     --header-bg: #ffffff;
     --footer-bg: #333333;
     --footer-text: #ffffff;
-    --selected-row-bg: #fffae6;
+    --selected-row-bg: #f6e085;
     --canvas-border: #333333;
+    --nav-active-bg: #aff6b1;
 }
 
+/*Dark mode colors*/
 body.dark-mode {
-    /* Dark mode */
     --bg-primary: #1e1e1e;
     --bg-secondary: #2d2d2d;
     --text-primary: #ffffff;
@@ -24,10 +25,12 @@ body.dark-mode {
     --header-bg: #2d2d2d;
     --footer-bg: #1a1a1a;
     --footer-text: #ffffff;
-    --selected-row-bg: #3a3a2e;
+    --selected-row-bg: #657bce;
     --canvas-border: #666666;
+    --nav-active-bg: #4CAF50;
 }
 
+/* General page styling ====================================== */
 html, body {
     height: 100%;
     width: 100%;
@@ -35,8 +38,9 @@ html, body {
     padding: 0;
 }
 
+/* General body ribbon styling ====================================== */
 body {
-    font-family: Arial, sans-serif;
+    font-family: Helvetica, sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     display: flex;
@@ -44,7 +48,7 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Main content area - scales to viewport size */
+/* Main content area - scales to viewport size ====================================== */
 .main-content {
     flex: 1;
     overflow-y: auto;
@@ -53,6 +57,7 @@ body {
     background-color: var(--bg-primary);
 }
 
+/* Header styling ====================================== */
 header {
     margin-bottom: 20px;
     display: flex;
@@ -68,7 +73,7 @@ header h1 {
     color: var(--text-primary);
 }
 
-/* Dark mode toggle button */
+/* Dark mode toggle button ====================================== */
 .theme-toggle {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -84,6 +89,36 @@ header h1 {
     background-color: var(--border-color);
 }
 
+/*Navigation ribbon styling ====================================== */
+.main-nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg-secondary);
+}
+
+.main-nav ul li {
+  float: left;
+}
+
+.main-nav ul li a {
+  display: block;
+  color: var(--text-primary);
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.main-nav ul li a:hover {
+  background-color: var(--border-color);
+}
+
+.main-nav li a.active {
+  background-color: var(--nav-active-bg);
+}
+
+/* axis dropdown styling ====================================== */
 .controls {
     display: flex;
     gap: 15px;
@@ -94,6 +129,7 @@ header h1 {
     padding: 10px;
     border-radius: 4px;
     border: 1px solid var(--border-color);
+    justify-content: center;
 }
 
 .controls select,
@@ -110,7 +146,7 @@ header h1 {
     background-color: var(--border-color);
 }
 
-/* Grid and table side-by-side wrapper; flexible layout */
+/* Grid and table side-by-side wrapper; flexible layout ====================================== */
 .content-wrapper {
     display: flex;
     gap: 20px;
@@ -125,9 +161,37 @@ header h1 {
     flex: 1;
     min-width: 300px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     border-radius: 4px;
+}
+
+.canvas-wrapper {
+    position: relative;
+    display: inline-block;
+    padding: 0px 0px 30px 30px; /* ? - ? - bottom - left */
+    box-sizing: border-box;
+}
+
+.axis-label {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.axis-label-x {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.axis-label-y {
+    position: absolute;
+    top: 50%;
+    left: -20px;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center;
 }
 
 canvas {
@@ -160,7 +224,7 @@ canvas {
 #data-table th,
 #data-table td {
     padding: 8px 10px;
-    border: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
     text-align: left;
     background-color: var(--bg-secondary);
 }
@@ -172,6 +236,10 @@ canvas {
 
 .selected-row {
     background-color: var(--selected-row-bg);
+}
+
+.selected-row td {
+    background-color: var(--selected-row-bg) !important;
 }
 
 .point-highlight {

@@ -5,6 +5,8 @@ const ctx = gridCanvas.getContext('2d');
 // selectors for which numeric fields map to axes
 const xAxisSelect = document.getElementById('x-axis');
 const yAxisSelect = document.getElementById('y-axis');
+const xLabelEl = document.getElementById('x-axis-label');
+const yLabelEl = document.getElementById('y-axis-label');
 
 // Container where the table of plotted objects will be inserted
 const dataTableDiv = document.getElementById('data-table');
@@ -73,29 +75,30 @@ function detectNumericFields() {
 }
 
 // Populate the axis `<select>` elements with detected numeric field names
-function populateAxisOptions() {
+function populateAxisOptions() {   
     xAxisSelect.innerHTML = '';
     yAxisSelect.innerHTML = '';
 
     numericFields.forEach(field => {
-        // x axis option
-        const optionX = document.createElement('option');
-        optionX.value = field;
-        optionX.textContent = field;
-        xAxisSelect.appendChild(optionX);
+        const optX = document.createElement('option');
+        optX.value = field;
+        optX.textContent = field;
+        xAxisSelect.appendChild(optX);
 
-        // y axis option
-        const optionY = document.createElement('option');
-        optionY.value = field;
-        optionY.textContent = field;
-        yAxisSelect.appendChild(optionY);
+        const optY = document.createElement('option');
+        optY.value = field;
+        optY.textContent = field;
+        yAxisSelect.appendChild(optY);
     });
 
-    // default to the first two numeric fields if available
     if (numericFields.length >= 2) {
         xAxisSelect.value = numericFields[0];
         yAxisSelect.value = numericFields[1];
+    } else if (numericFields.length === 1) {
+        xAxisSelect.value = numericFields[0];
     }
+
+    updateHtmlAxisLabels();
 }
 
 // Clear the canvas and redraw grid lines and plotted points for the
@@ -107,7 +110,7 @@ function drawGrid() {
     const yField = yAxisSelect.value;
 
     drawGridLines();
-    drawAxisLabels(xField, yField);
+    updateHtmlAxisLabels();
     plotBowlingBalls(xField, yField);
 }
 
@@ -141,32 +144,6 @@ function drawGridLines() {
     ctx.moveTo(0, 0);
     ctx.lineTo(0, gridCanvas.height);
     ctx.stroke();
-}
-
-// Draw dynamic axis labels and title. Title shows which fields are being compared;
-// X-axis label appears below the grid, Y-axis label to the left of the grid (rotated).
-function drawAxisLabels(xField, yField) {
-    const padding = 40;
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#000';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    // Title: "xField vs yField" (above the grid)
-    const title = `${xField} vs ${yField}`;
-    ctx.fillText(title, gridCanvas.width / 2, 15);
-
-    // X-axis label (below the grid, outside the plot area)
-    ctx.textBaseline = 'top';
-    ctx.fillText(xField, gridCanvas.width / 2, gridCanvas.height - padding + 10);
-
-    // Y-axis label (left of the grid, outside the plot area, rotated 90 degrees)
-    ctx.save();
-    ctx.translate(15, gridCanvas.height / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.textBaseline = 'middle';
-    ctx.fillText(yField, 0, 0);
-    ctx.restore();
 }
 
 // Plot each bowling ball as a point on the canvas. Points are scaled to the
@@ -258,6 +235,12 @@ function selectBall(idx) {
     drawGrid();
 }
 
+/* Sends the new values of the x and y axis to HTML */
+function updateHtmlAxisLabels() {
+    xLabelEl.textContent = xAxisSelect.value;
+    yLabelEl.textContent = yAxisSelect.value;
+}
+
 // allow clicking canvas to select nearest ball
 // Canvas click handler: find the nearest plotted point and select it if
 // the click is close enough.
@@ -281,7 +264,7 @@ gridCanvas.addEventListener('click', (e) => {
 
 // Dropdown event listeners: redraw automatically when axis selection changes
 // Also prevent both axes from being set to the same field
-xAxisSelect.addEventListener('change', () => {
+/*xAxisSelect.addEventListener('change', () => {
     // If X-axis is now the same as Y-axis, auto-switch Y-axis to another field
     if (xAxisSelect.value === yAxisSelect.value) {
         const alternative = numericFields.find(f => f !== xAxisSelect.value);
@@ -301,6 +284,26 @@ yAxisSelect.addEventListener('change', () => {
             xAxisSelect.value = alternative;
         }
     }
+    drawGrid();
+    renderTable();
+});*/
+
+xAxisSelect.addEventListener('change', () => {
+    if (xAxisSelect.value === yAxisSelect.value) {
+        const alt = numericFields.find(f => f !== xAxisSelect.value);
+        if (alt) yAxisSelect.value = alt;
+    }
+    updateHtmlAxisLabels();   // ← new
+    drawGrid();
+    renderTable();
+});
+
+yAxisSelect.addEventListener('change', () => {
+    if (yAxisSelect.value === xAxisSelect.value) {
+        const alt = numericFields.find(f => f !== yAxisSelect.value);
+        if (alt) xAxisSelect.value = alt;
+    }
+    updateHtmlAxisLabels();   // ← new
     drawGrid();
     renderTable();
 });
