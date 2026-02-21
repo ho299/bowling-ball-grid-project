@@ -162,6 +162,13 @@ header h1 {
     background-color: var(--border-color);
 }
 
+.logo {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    width: clamp(150px, 30vw, 400px);
+}
+
 /* Grid and table side-by-side wrapper; flexible layout ====================================== */
 .content-wrapper {
     display: flex;
