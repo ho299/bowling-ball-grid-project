@@ -13,28 +13,20 @@
     <div class="main-content">
         <!-- Site Navigation -->
         <nav class="main-nav">
-            <div>
-                <ul>
-                    <li><a class="active" href="homepage.html">Home</a></li>
-                    <li><a href="page1.html">Page1</a></li>
-                    <li><a href="page2.html">Page2</a></li>
-                    <li><a href="page3.html">Page3</a></li>
-                </ul>
-            </div>
+            <ul>
+                <li><a class="active" href="homepage.html">Home</a></li>
+                <li><a href="page1.html">Page1</a></li>
+                <li><a href="page2.html">Page2</a></li>
+                <li><a href="page3.html">Page3</a></li>
+                <li class="nav-right">
+                    <a id="theme-toggle" class="theme-toggle">Dark Mode</a></li>
+            </ul>
         </nav>
 
         <!-- Header: site title and primary navigation -->
         <header>
-            <!-- Site title -->
-            <div class="header">
-                <h1>ECE 50874: Bowling Ball Grid</h1>
-            </div>
-
-            <!-- Dark mode toggle button -->
-            <button id="theme-toggle" class="theme-toggle">Dark Mode</button>
+            <img id="logo" src="bowl_iq_lightmode.png" width="400" alt="Bowl IQ Logo" class="logo">      
         </header>
-
-        
 
         <!-- Grid and table wrapper: side-by-side or stacked layout -->
         <div class="content-wrapper">
@@ -43,11 +35,11 @@
                 <!-- Controls: select which numeric fields map to X and Y axes and update the plot -->
                 <section class="controls">
                     <label>
-                        X-axis:
+                        X-Axis:
                         <select id="x-axis"></select>
                     </label>
                     <label>
-                        Y-axis:
+                        Y-Axis:
                         <select id="y-axis"></select>
                     </label>
                 </section>
@@ -62,7 +54,7 @@
 
             <!-- Table of plotted objects: dynamically populated by app.js with the plotted rows -->
             <section class="table-container">
-                <h2>Bowling Balls Shown</h2>
+                <h2>Bowling Balls Plotted</h2>
                 <!-- JavaScript will insert a <table> here showing each object's fields -->
                 <div id="data-table"></div>
             </section>
@@ -87,7 +79,7 @@
 
     <!-- Footer: copyright and small print (fixed at bottom) -->
     <footer>
-        <p>&copy; ECE 50874 Bowling Ball Grid. For Educational Purposes - not a marketed product.</p>
+        <p>Purdue, ECE 50874, Bowling Ball Grid. For Educational Purposes - not a marketed product.</p>
     </footer>
 
     <!-- Main application script: handles data, plotting and table interactions -->

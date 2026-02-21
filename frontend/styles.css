@@ -8,10 +8,12 @@
     --border-light: #dddddd;
     --header-bg: #ffffff;
     --footer-bg: #333333;
+    --nav-bg: #333333;
     --footer-text: #ffffff;
+    --nav-text: #ffffff;
     --selected-row-bg: #f6e085;
     --canvas-border: #333333;
-    --nav-active-bg: #aff6b1;
+    --nav-active-bg: #4CAF50;
 }
 
 /*Dark mode colors*/
@@ -24,7 +26,9 @@ body.dark-mode {
     --border-light: #555555;
     --header-bg: #2d2d2d;
     --footer-bg: #1a1a1a;
+    --nav-bg: #1a1a1a;
     --footer-text: #ffffff;
+    --nav-text: #ffffff;
     --selected-row-bg: #657bce;
     --canvas-border: #666666;
     --nav-active-bg: #4CAF50;
@@ -94,17 +98,14 @@ header h1 {
   list-style-type: none;
   margin: 0;
   padding: 0;
-  overflow: hidden;
-  background-color: var(--bg-secondary);
-}
-
-.main-nav ul li {
-  float: left;
+  display: flex;
+  align-items: center;
+  background-color: var(--nav-bg);
 }
 
 .main-nav ul li a {
   display: block;
-  color: var(--text-primary);
+  color: var(--nav-text);
   text-align: center;
   padding: 14px 16px;
   text-decoration: none;
@@ -116,6 +117,21 @@ header h1 {
 
 .main-nav li a.active {
   background-color: var(--nav-active-bg);
+}
+
+.main-nav li.nav-right{
+    margin-left: auto;
+}
+
+.theme-toggle {
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    cursor: pointer;
+    font-size: 14px;
+    position: static;
+    margin: 0;
+    border: none;
+    outline: none;
 }
 
 /* axis dropdown styling ====================================== */

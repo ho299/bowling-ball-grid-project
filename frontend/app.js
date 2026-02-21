@@ -13,6 +13,7 @@ const dataTableDiv = document.getElementById('data-table');
 
 // Dark mode toggle button
 const themeToggle = document.getElementById('theme-toggle');
+const logo = document.getElementById('logo');
 
 // Application state
 let bowlingBalls = [];       // array of objects (each ball with properties)
@@ -310,10 +311,17 @@ yAxisSelect.addEventListener('change', () => {
 
 // Dark mode toggle handler: toggle class on body and save preference to localStorage
 themeToggle.addEventListener('click', () => {
+    // update localStorage with the new theme preference
     document.body.classList.toggle('dark-mode');
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-    themeToggle.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
+
+    //update logo image
+    if (document.body.classList.contains('dark-mode')) {
+        themeToggle.textContent = 'Light Mode';
+        logo.src = 'bowl_iq_darkmode.png';
+    } else {
+        themeToggle.textContent = 'Dark Mode';
+        logo.src = 'bowl_iq_lightmode.png';
+    }
 });
 
 // Initialize dark mode from localStorage preference
