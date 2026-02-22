@@ -29,40 +29,49 @@ router.get('/:id', async (req, res) => {
     }
 });
 //POST /api/ball - Create a new bowling ball
-router.post('/', async (req, res) => {  
+router.post('/', async (req, res) => {
     try {
-        const { name, brand, image, release_date, discontinued,
-             overseas, factory_finish, core, coverstock,specs } = req.body;
-        
+        const { name, image, brand, release_date, discontinued,
+            overseas, factory_finish, early_v_late, smooth_v_angular, hook_potential, core, coverstock, specs } = req.body;
+
         const createdCore = await coreQueries.createCore({
             name: core.name,
             type: core.type,
             description: core.description
         });
+
         const createdCoverstock = await coverstockQueries.createCoverstock({
             name: coverstock.name,
             type: coverstock.type,
             description: coverstock.description
         });
-        
-        const newBall = await ballQueries.createBall({
-            name, brand, image, release_date, discontinued, 
-            overseas, factory_finish, core_id: createdCore.id, coverstock_id: createdCoverstock.id});
-        res.status(201).json(newBall);
 
-        const createdSpecs =specs && specs.length > 0
-        ? await specQueries.createSpecs(
-            specs.map(spec => 
-                specQueries.createSpecs({
-                    ball_id:newBall.id,
-                    weight: spec.weight,
-                    rg: spec.rg,
-                    diff:spec.diff,
-                    mb_df:spec.mb_df
-                })
-            )): [];
-    }
-    catch (error) {
+        const newBall = await ballQueries.createBall({
+            name, image,brand, release_date, discontinued,
+            overseas, factory_finish, early_v_late, smooth_v_angular, hook_potential,
+            core_id: createdCore.id,
+            coverstock_id: createdCoverstock.id
+        });
+
+        // CALL ALGORITHMS HERE TO GET THE VALUES FOR E_v_L, S_v_A AND HOOK
+
+        const createdSpecs = specs && specs.length > 0
+            ? await Promise.all(                         
+                specs.map(spec =>
+                    specQueries.createSpec({              
+                        ball_id: newBall.id,
+                        weight: spec.weight,
+                        rg: spec.rg,
+                        diff: spec.diff,
+                        mb_diff: spec.mb_diff         
+                    })
+                )
+            ) : [];
+
+        res.status(201).json({ ...newBall, specs: createdSpecs }); 
+
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to create a new bowling ball' });
     }
 });
@@ -71,8 +80,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, brand, image, release_date, discontinued, overseas, factory_finish, core_id, coverstock_id } = req.body;
-        const updatedBall = await ballQueries.updateBall(id, { name, brand, image, release_date, discontinued, overseas, factory_finish, core_id, coverstock_id });
+        const { name, brand, image, release_date, discontinued, overseas, factory_finish, early_v_late, smooth_v_angular, hook,core_id, coverstock_id } = req.body;
+        const updatedBall = await ballQueries.updateBall(id, { name, brand, image, release_date, discontinued, overseas, factory_finish, early_v_late, smooth_v_angular, hook,core_id, coverstock_id });
         
         if (!updatedBall) return res.status(404).json({ error: 'Ball not found' });
         
