@@ -50,7 +50,13 @@ function earlyVLate(bowlingBall) {
     //higher mass diff = earlier
     //higher diff = tiny bit earlier
 
-    var value = (bowlingBall.rg-minRG)*bowlingBall.factory_finish*(5**(1/(1-(bowlingBall.mb_diff-minMBDiff))))*(bowlingBall.diff-minDiff);
+    var rgWeight = 55
+    var surfaceWeight = 25
+    var mbDiffWeight = 15
+    var diffWeight = 5
+
+
+    var value = rgWeight*(bowlingBall.rg - minRG)/(maxRG-minRG) + surfaceWeight * (bowlingBall.factory_finish/9000)**.66 + mbDiffWeight*(maxMBDiff-bowlingBall.mb_diff)/(maxMBDiff-minMBDiff) + diffWeight*(maxDiff-bowlingBall.diff)/(maxDiff-minDiff)
     return value;
 }
 
@@ -65,7 +71,12 @@ function smoothVAngular(bowlingBall) {
     //lower mass diff = smoother
     //lower surface number = smoother
 
-    var value = (maxRG-bowlingBall.rg)*(bowlingBall.diff-minDiff)*(5**(1/(1-(bowlingBall.mb_diff-minMBDiff))))*bowlingBall.factory_finish;
+    var rgWeight = 55
+    var diffWeight = 25
+    var mbDiffWeight = 15
+    var surfaceWeight = 5
+
+    var value = rgWeight*(maxRG - bowlingBall.rg)/(maxRG-minRG) + surfaceWeight * (bowlingBall.factory_finish/9000)**.66 + mbDiffWeight*(bowlingBall.mb_diff-minMBDiff)/(maxMBDiff-minMBDiff) + diffWeight*(bowlingBall.diff-minDiff)/(maxDiff-minDiff)
     return value;
 }
 
