@@ -137,7 +137,7 @@ function finishNametoNumber(bowlingBallFinishName, bowlingBallCoverstockName) {
 
     const numbersTruncated = splitString[0].replaceAll(",","").replaceAll("/"," ");
     const splitNumberBySpace = numbersTruncated.split(" ");
-    console.log("splitNumberBySpace: ", splitNumberBySpace)
+    // console.log("splitNumberBySpace: ", splitNumberBySpace)
     const regex = /\d/;
     for(var i=0;i<splitNumberBySpace.length;i+0){
         if(regex.test(splitNumberBySpace[i])){
