@@ -1,69 +1,88 @@
 <!DOCTYPE html>
-<htlm lang="en">
+<html lang="en">
 <head>
+    <!-- Page metadata -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bowling Ball Grid Homepage</title>
+    <!-- Main stylesheet -->
     <link rel="stylesheet" href="styles.css">
-</htlm>
+</head>
 <body>
-    <header>
-        <h1>ECE 50874: Bowling Ball Grid</h1>
-        <nav>
+    <!-- Main content wrapper: scales to viewport -->
+    <div class="main-content">
+        <!-- Site Navigation -->
+        <nav class="main-nav">
             <ul>
-                <li><a href="#about">About</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#contact">Contact</a></li>
+                <li><a class="active" href="homepage.html">Home</a></li>
+                <li><a href="page1.html">Page1</a></li>
+                <li><a href="page2.html">Page2</a></li>
+                <li><a href="page3.html">Page3</a></li>
+                <li class="nav-right">
+                    <a id="theme-toggle" class="theme-toggle">Dark Mode</a></li>
             </ul>
         </nav>
-    </header>
 
-    <section class="controls">
-        <label>
-            X-axis:
-            <select id="x-axis"></select>
-        </label>
-        <label>
-            Y-axis:
-            <select id="y-axis"></select>
-        </label>
+        <!-- Header: site title and primary navigation -->
+        <header>
+            <img id="logo" src="bowl_iq_lightmode.png" width="400" alt="Bowl IQ Logo" class="logo">      
+        </header>
 
-        <button id="Update Grid">Update Grid</button>
-    </section>
+        <!-- Grid and table wrapper: side-by-side or stacked layout -->
+        <div class="content-wrapper">
+            <!-- Grid container: canvas used as the plotting surface for the scatter/grid -->
+            <section class="grid-container">
+                <!-- Controls: select which numeric fields map to X and Y axes and update the plot -->
+                <section class="controls">
+                    <label>
+                        X-Axis:
+                        <select id="x-axis"></select>
+                    </label>
+                    <label>
+                        Y-Axis:
+                        <select id="y-axis"></select>
+                    </label>
+                </section>
 
-    <section class="grid-container">
-        <canvas id="gridCanvas" width="600" height="600"></canvas>
-    </section>
+                <!-- Canvas and labels used to draw the bowling ball grid -->
+                <div class="canvas-wrapper">
+                    <div id="x-axis-label" class="axis-label axis-label-x"></div>
+                    <div id="y-axis-label" class="axis-label axis-label-y"></div>
+                    <canvas id="gridCanvas" width="600" height="600"></canvas>
+                </div>
+            </section>
 
-    <section id="about">
-        <h2>About the Bowling Ball Grid</h2>
-        <p>The Bowling Ball Grid is a unique and interactive way to visualize data. It allows users to explore complex datasets in a fun and engaging manner.</p>
-    </section>
+            <!-- Table of plotted objects: dynamically populated by app.js with the plotted rows -->
+            <section class="table-container">
+                <h2>Bowling Balls Plotted</h2>
+                <!-- JavaScript will insert a <table> here showing each object's fields -->
+                <div id="data-table"></div>
+            </section>
+        </div>
 
-    <section id="features">
-        <h2>Features</h2>
-        <ul>
-            <li>Interactive Data Visualization</li>
-            <li>User-Friendly Interface</li>
-            <li>Customizable Layouts</li>
-            <li>Real-Time Data Updates</li>
-        </ul>
-    </section>
+        <!-- Informational sections: static content describing the project -->
+        <section id="about">
+            <h2>About the Bowling Ball Grid</h2>
+            <p>The Bowling Ball Grid is a unique and interactive way to visualize data. It allows users to explore complex datasets in a fun and engaging manner.</p>
+        </section>
 
-    <section id="contact">
-        <h2>Contact Us</h2>
-        <p>If you have any questions or would like to learn more about the Bowling Ball Grid, please feel free to reach out to us.</p>
-        <form action="submit_form.php" method="post">
-            <label for="name">Name:</label><br>
-            <input type="text" id="name" name="name"><br><br>
-            <label for="email">Email:</label><br>
-            <input type="email" id="email" name="email"><br><br>
-            <input type="submit" value="Submit">
-        </form>
-    </section>
+        <section id="features">
+            <h2>Features</h2>
+            <ul>
+                <li>Interactive Data Visualization</li>
+                <li>User-Friendly Interface</li>
+                <li>Customizable Layouts</li>
+                <li>Real-Time Data Updates</li>
+            </ul>
+        </section>
+    </div>
 
-    <script src="app.js"></script>
-
+    <!-- Footer: copyright and small print (fixed at bottom) -->
     <footer>
-        <p>&copy; 2024 Bowling Ball Grid. All rights reserved.</p>
+        <p>Purdue, ECE 50874, Bowling Ball Grid. For Educational Purposes - not a marketed product.</p>
     </footer>
+
+    <!-- Main application script: handles data, plotting and table interactions -->
+    <script src="app.js"></script>
+</body>
+</html>
