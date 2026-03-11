@@ -27,13 +27,12 @@ function hookPotential(bowlingBall) {
     //higher mass diff = more hook
     //lower surface number = slightly more hook
     //lower rg = more hook
-
     var rg = bowlingBall.rg;
     var diff = bowlingBall.diff;
     var mb_diff = bowlingBall.mb_diff;
     var finish = bowlingBall.factory_finish;
 
-    if(bowlingBall.factory_finish=90000){
+    if(bowlingBall.factory_finish===90000){
         return 0;
     }
 
@@ -59,7 +58,7 @@ function earlyVLate(bowlingBall) {
     var mbDiffWeight = 15
     var diffWeight = 5
 
-    if(bowlingBall.factory_finish=90000){
+    if(bowlingBall.factory_finish===90000){
         return 0;
     }
 
@@ -84,7 +83,7 @@ function smoothVAngular(bowlingBall) {
     var mbDiffWeight = 15
     var surfaceWeight = 5
 
-    if(bowlingBall.factory_finish=90000){
+    if(bowlingBall.factory_finish===90000){
         return 0;
     }
 
