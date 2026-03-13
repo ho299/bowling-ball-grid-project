@@ -50,7 +50,7 @@ function testingWorkFlow () {
             // THEN CONSIDER PARTIAL MATCHES
             // OUTPUT INTO A CSV SO WE CAN SORT AGAINST HOOK, EVA, SVA AND SEE AGAINST VALIDATION
             //
-            const MBDIFF = DIFF - INTDIFF
+            const MBDIFF = INTDIFF
 
             // Coverstock — first key is name, second is finish
             const coverstockEntries = Object.entries(spec['COVERSTOCK']);
