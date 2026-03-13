@@ -98,7 +98,8 @@ function smoothVAngular(bowlingBall) {
  */
 function finishNametoNumber(bowlingBallFinishName, bowlingBallCoverstockName) {
     if(
-        bowlingBallCoverstockName.toLowerCase().includes("poly")||
+        bowlingBallCoverstockName.toLowerCase().includes("polyester")||
+        bowlingBallCoverstockName.toLowerCase().includes("polythane")||
         bowlingBallCoverstockName.toLowerCase().includes("plastic")
     ){
         return 90000;
