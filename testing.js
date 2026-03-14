@@ -28,7 +28,7 @@ function testingWorkFlow () {
 
 
     // const fs = require('fs');/
-    fs.writeFileSync('output.csv', 'Series,Weight,Ball,Length,Backend,Hook,eVL,sVA,HookPotential\n');
+    fs.writeFileSync('output.csv', 'Series,Ball,CoverSName,CoverSFinish,Weight,RG,DIFF,MBDIFF,Finish_Number,Length,Backend,Hook,eVL,sVA,HookPotential\n');
 
     for (const [seriesName, weights] of Object.entries(data)) {
         for (const [weight, spec] of Object.entries(weights)) {
@@ -67,7 +67,8 @@ function testingWorkFlow () {
 
             // Ball motion
             const { Length, Backend, Hook } = spec['BALL MOTION'];
-            const row = `${seriesName},${weight},${spec['ball_name']},${Length},${Backend},${Hook},${eVL},${sVA},${hookPot}\n`;
+
+            const row = `${seriesName},${spec['ball_name']},${coverstockName},${coverstockFinish},${weight},${RG},${DIFF},${MBDIFF},${finishNumber},${Length},${Backend},${Hook},${eVL},${sVA},${hookPot}\n`;
             fs.appendFileSync('output.csv', row);
             
         }
