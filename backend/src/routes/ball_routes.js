@@ -29,6 +29,7 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve the bowling ball' });
     }
 });
+
 //POST /api/ball - Create a new bowling ball
 router.post('/', async (req, res) => {
     try {
@@ -46,22 +47,12 @@ router.post('/', async (req, res) => {
             type: coverstock.type,
             description: coverstock.description
         });
-
-        // CALL ALGORITHMS HERE TO GET THE VALUES FOR E_v_L, S_v_A AND HOOK
-        // finish_number is created from coverstock.name and factory_finish
-        //
         
-        var finishNumber = algorithm.finishNametoNumber(coverstockFinish, coverstockName);
+        var finishNumber = algorithm.finishNametoNumber(factory_finish, coverstock.name);
         
-        // bowlingBall  = {rg:specs.rg,diff:specs.diff, mb_diff:spec.mb_diff, factory_finish:finishNumber};
-        // var hookPot = algorithm.hookPotential(bowlingBall);
-        // var eVL = algorithm.earlyVLate(bowlingBall);
-        // var sVA = algorithm.smoothVAngular(bowlingBall);
-
         const newBall = await ballQueries.createBall({
             name, image,brand, release_date, discontinued,
-            overseas, factory_finish, eVL, sVA, hookPot,
-            core_id: createdCore.id,
+            overseas, factory_finish, core_id: createdCore.id,
             coverstock_id: createdCoverstock.id
         });
 
@@ -81,9 +72,9 @@ router.post('/', async (req, res) => {
                     rg: spec.rg,
                     diff: spec.diff,
                     mb_diff: spec.mb_diff,
-                    // early_v_late: algorithm.earlyVLate(bowlingBall),
-                    // smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
-                    // hook_potential: algorithm.hookPotential(bowlingBall)
+                    early_v_late: algorithm.earlyVLate(bowlingBall),
+                    smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
+                    hook_potential: algorithm.hookPotential(bowlingBall)
                 });
             })
         ) : [];
@@ -100,8 +91,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, brand, image, release_date, discontinued, overseas, factory_finish, early_v_late, smooth_v_angular, hook,core_id, coverstock_id } = req.body;
-        const updatedBall = await ballQueries.updateBall(id, { name, brand, image, release_date, discontinued, overseas, factory_finish, early_v_late, smooth_v_angular, hook,core_id, coverstock_id });
+        const { name, brand, image, release_date, discontinued, overseas, factory_finish,core_id, coverstock_id } = req.body;
+const updatedBall = await ballQueries.updateBall(id, { name, brand, image, release_date, discontinued, overseas, factory_finish,core_id, coverstock_id });
         
         if (!updatedBall) return res.status(404).json({ error: 'Ball not found' });
         

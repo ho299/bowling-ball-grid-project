@@ -64,15 +64,15 @@ async function seed() {
                     parsedSpecs.push({
                         weight,
                         ...spec,
-                        // hook_potential: algorithm.hookPotential(bowlingBall),
-                        // early_v_late: algorithm.earlyVLate(bowlingBall),
-                        // smooth_v_angular: algorithm.smoothVAngular(bowlingBall)
+                        hook_potential: algorithm.hookPotential(bowlingBall),
+                        early_v_late: algorithm.earlyVLate(bowlingBall),
+                        smooth_v_angular: algorithm.smoothVAngular(bowlingBall)
                     });
                 }
             }
 
-            // Use the first available spec's algorithm values for the ball
-            const ballAlgo = parsedSpecs[0] ?? { hook_potential: null, early_v_late: null, smooth_v_angular: null };
+            // // Use the first available spec's algorithm values for the ball
+            // const ballAlgo = parsedSpecs[0] ?? { hook_potential: null, early_v_late: null, smooth_v_angular: null };
 
             // --- Ball ---
             const ballResult = await client.query(
@@ -91,21 +91,16 @@ async function seed() {
                     row.discontinued === 'true',
                     row.overseas === 'true',
                     row.factory_finish,
-                    ballAlgo.early_v_late,
-                    ballAlgo.smooth_v_angular,
-                    ballAlgo.hook_potential
                 ]
             );
             const ballId = ballResult.rows[0].id;
 
-            // --- Specs ---
             for (const spec of parsedSpecs) {
                 await client.query(
-                    `INSERT INTO Specs (ball_id, weight, rg, diff, mb_diff) VALUES ($1,$2,$3,$4,$5)`,
-                    [ballId, spec.weight, spec.rg, spec.diff, spec.mb_diff]
+                    `INSERT INTO specs (ball_id, weight, rg, diff, mb_diff, early_v_late, smooth_v_angular, hook_potential) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                    [ballId, spec.weight, spec.rg, spec.diff, spec.mb_diff, spec.early_v_late, spec.smooth_v_angular, spec.hook_potential]
                 );
             }
-
             await client.query('COMMIT');
             console.log(`✓ Inserted: ${row.url}`);
         }
