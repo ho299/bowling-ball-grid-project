@@ -25,3 +25,5 @@ router.post('/', async function(req, res){
     catch (error) {
         res.status(500).json({ error: 'Failed to create specs' });
     }});
+
+module.exports = router;
