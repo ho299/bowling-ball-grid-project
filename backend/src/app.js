@@ -1,19 +1,22 @@
 
 // app.js
 const express = require('express');
-const coverstockRoutes = require('./routes/coverstock_routes');
-const ballRoutes = require('./routes/ball_routes');
-const coreRoutes = require('./routes/core_routes');
-const specRoutes = require('./routes/specs_routes');
 
 const app = express();
 const port = 3001;
 
 const init = async() => {
     //page routing below:
+    const specRoutes = require('./routes/specs_routes');
     app.use('/api/specs', specRoutes);
+    
+    const coverstockRoutes = require('./routes/coverstock_routes');
     app.use('/api/coverstocks', coverstockRoutes);
+    
+    const coreRoutes = require('./routes/core_routes');
     app.use('/api/cores', coreRoutes);
+    
+    const ballRoutes = require('./routes/ball_routes');
     app.use('/api/ball', ballRoutes);
 
     app.get('/', (req, res) => {

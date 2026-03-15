@@ -1,8 +1,9 @@
-const router = require('express').Router();
+const express = require('express')
+const router = express.Router();
 const specQueries = require('../queries/spec_queries'); // calling sql queries
 
 //GET /api/specs/ball/:id - Get specs by ball id
-router.get('/ball/:id', async (req, res) => {
+router.get('/ball/:id', async function(req, res){
     try {
         const { id } = req.params;
         const specs = await specQueries.getSpecsByBallId(id);
@@ -15,7 +16,7 @@ router.get('/ball/:id', async (req, res) => {
 });
 
 //POST /api/specs - Create specs information
-router.post('/', async (req, res) => {
+router.post('/', async function(req, res){
     try {
         const { ball_id, weight, length, RG, differential } = req.body;
         const newSpecs = await specQueries.createSpecs({ ball_id, weight, length, RG, differential });
