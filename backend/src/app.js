@@ -9,16 +9,24 @@ const specRoutes = require('./routes/specs_routes');
 const app = express();
 const port = 3001;
 
-//page routing below:
-app.use('/api/specs', specRoutes);
-app.use('/api/coverstocks', coverstockRoutes);
-app.use('/api/cores', coreRoutes);
-app.use('/api/ball', ballRoutes);
+const init = async() => {
+    //page routing below:
+    app.use('/api/specs', specRoutes);
+    app.use('/api/coverstocks', coverstockRoutes);
+    app.use('/api/cores', coreRoutes);
+    app.use('/api/ball', ballRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+    app.get('/', (req, res) => {
+    res.send('Hello World!');
+    });
 
-app.listen(port, () => {
-  console.log(`Backend Open on Port: ${port}`);
-});
+    app.listen(port, () => {
+    console.log(`Backend Open on Port: ${port}`);
+    });
+};
+
+init();
+
+console.log("Backend Starting...")
+
+module.exports = app;
