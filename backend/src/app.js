@@ -6,7 +6,7 @@ const app = express();
 const port = 3001;
 
 console.log("Backend Starting...")
-// const init = async() => {
+const init = async() => {
     //page routing below:
     const specRoutes = require('./routes/specs_routes');
     app.use('/api/specs', specRoutes);
@@ -27,9 +27,9 @@ console.log("Backend Starting...")
     app.listen(port, () => {
     console.log(`Backend Open on Port: ${port}`);
     });
-// };
+};
 
-// init();
-console.log("Backend Loaded...")
+init();
+// console.log("Backend Loading...")
 
-module.exports = app;
+// module.exports = app;
