@@ -15,13 +15,14 @@ const dataTableDiv = document.getElementById('data-table');
 const themeToggle = document.getElementById('theme-toggle');
 const logo = document.getElementById('logo');
 
-// Weight selector for spec lookup
-const weightSelect = document.getElementById('weight-select');
+// Weight selector — resolved after FilterPanel.build() creates the element
+let weightSelect = null;
 
 // Application state
 let bowlingBalls = [];       // array of objects (each ball with properties)
 let numericFields = [];      // axis field value-keys, derived from AXIS_FIELDS
 let selectedIndex = null;    // index of the currently selected ball (or null)
+let filterPanel  = null;     // FilterPanel instance, built after data loads
 
 // Fixed axis field definitions: value = option key, label = display name,
 // accessor(ball, selectedWeight) returns the numeric value to plot.
@@ -86,6 +87,27 @@ async function fetchData() {
 
     detectNumericFields();
     populateAxisOptions();
+
+    filterPanel = new FilterPanel(document.getElementById('filter-container'), {
+        onChange: () => { drawGrid(); renderTable(); },
+        weightConfig: {
+            id: 'weight-select',
+            options: [
+                { value: '16', label: '16 lb' },
+                { value: '15', label: '15 lb' },
+                { value: '14', label: '14 lb' },
+                { value: '13', label: '13 lb' },
+                { value: '12', label: '12 lb' },
+            ],
+            selected: '15',
+        },
+    });
+    filterPanel.build(bowlingBalls);
+
+    // Resolve the weight select now that FilterPanel has rendered it
+    weightSelect = document.getElementById('weight-select');
+    weightSelect.addEventListener('change', () => { drawGrid(); renderTable(); });
+
     drawGrid();
     console.log('fetchData: loaded', bowlingBalls.length, 'balls');
     console.log('fetchData: numericFields=', numericFields);
@@ -174,9 +196,16 @@ function plotBowlingBalls(xField, yField) {
     const yDef = AXIS_FIELDS.find(f => f.value === yField);
     const selectedWeight = parseInt(weightSelect.value, 10);
 
-    // Compute values, filtering nulls for range calculation
-    const allX = bowlingBalls.map(b => xDef ? xDef.accessor(b, selectedWeight) : null);
-    const allY = bowlingBalls.map(b => yDef ? yDef.accessor(b, selectedWeight) : null);
+    // Clear all stored positions first
+    bowlingBalls.forEach(b => { b._x = null; b._y = null; });
+
+    // Only plot balls that pass the active filters
+    const visible = filterPanel
+        ? bowlingBalls.filter(b => filterPanel.passes(b, selectedWeight))
+        : bowlingBalls;
+
+    const allX = visible.map(b => xDef ? xDef.accessor(b, selectedWeight) : null);
+    const allY = visible.map(b => yDef ? yDef.accessor(b, selectedWeight) : null);
     const validX = allX.filter(v => v != null);
     const validY = allY.filter(v => v != null);
     if (validX.length === 0 || validY.length === 0) return;
@@ -184,15 +213,12 @@ function plotBowlingBalls(xField, yField) {
     const xMin = Math.min(...validX), xMax = Math.max(...validX);
     const yMin = Math.min(...validY), yMax = Math.max(...validY);
 
-    bowlingBalls.forEach((ball, idx) => {
-        const xVal = allX[idx];
-        const yVal = allY[idx];
+    visible.forEach((ball, i) => {
+        const xVal = allX[i];
+        const yVal = allY[i];
+        const idx  = bowlingBalls.indexOf(ball);
 
-        if (xVal == null || yVal == null) {
-            ball._x = null;
-            ball._y = null;
-            return;
-        }
+        if (xVal == null || yVal == null) return;
 
         const xRatio = (xMax === xMin) ? 0.5 : (xVal - xMin) / (xMax - xMin);
         const yRatio = (yMax === yMin) ? 0.5 : (yVal - yMin) / (yMax - yMin);
@@ -225,6 +251,19 @@ function renderTable() {
 
     const selectedWeight = parseInt(weightSelect.value, 10);
 
+    // Apply active filters; preserve original indices for selection
+    const filteredIndices = filterPanel
+        ? bowlingBalls.map((_, i) => i).filter(i => filterPanel.passes(bowlingBalls[i], selectedWeight))
+        : bowlingBalls.map((_, i) => i);
+
+    // Update "Showing X of Y" counter
+    const countEl = document.getElementById('ball-count');
+    if (countEl) {
+        countEl.textContent = filteredIndices.length < bowlingBalls.length
+            ? `(${filteredIndices.length} of ${bowlingBalls.length})`
+            : `(${bowlingBalls.length})`;
+    }
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
@@ -239,10 +278,8 @@ function renderTable() {
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    const indices = bowlingBalls.map((_, i) => i);
-
     const tbody = document.createElement('tbody');
-    indices.forEach(idx => {
+    filteredIndices.forEach(idx => {
         const ball = bowlingBalls[idx];
         const tr = document.createElement('tr');
         tr.dataset.index = idx;
@@ -267,7 +304,7 @@ function renderTable() {
         const selectedRow = tbody.querySelector(`tr[data-index="${selectedIndex}"]`);
         if (selectedRow) selectedRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
-    console.log('renderTable: rendered', bowlingBalls.length, 'rows');
+    console.log('renderTable: rendered', filteredIndices.length, 'of', bowlingBalls.length, 'rows');
 }
 
 // Mark a ball as selected by index, refresh the table row styles and redraw
@@ -353,23 +390,22 @@ yAxisSelect.addEventListener('change', () => {
     renderTable();
 });
 
-weightSelect.addEventListener('change', () => {
-    drawGrid();
-    renderTable();
-});
+// Weight listener is registered in fetchData() after FilterPanel.build() creates the element.
 
 // Dark mode toggle handler: toggle class on body and save preference to localStorage
 themeToggle.addEventListener('click', () => {
     // update localStorage with the new theme preference
     document.body.classList.toggle('dark-mode');
 
-    //update logo image
+    //update logo image and persist preference
     if (document.body.classList.contains('dark-mode')) {
         themeToggle.textContent = 'Light Mode';
         logo.src = 'bowl_iq_darkmode.png';
+        localStorage.setItem('theme', 'dark');
     } else {
         themeToggle.textContent = 'Dark Mode';
         logo.src = 'bowl_iq_lightmode.png';
+        localStorage.setItem('theme', 'light');
     }
 });
 
@@ -379,9 +415,11 @@ function initializeTheme() {
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
         themeToggle.textContent = 'Light Mode';
+        logo.src = 'bowl_iq_darkmode.png';
     } else {
         document.body.classList.remove('dark-mode');
         themeToggle.textContent = 'Dark Mode';
+        logo.src = 'bowl_iq_lightmode.png';
     }
 }
 

@@ -15,9 +15,9 @@
         <nav class="main-nav">
             <ul>
                 <li><a class="active" href="homepage.html">Home</a></li>
-                <li><a href="page1.html">Page1</a></li>
-                <li><a href="page2.html">Page2</a></li>
-                <li><a href="page3.html">Page3</a></li>
+                <li><a href="compare.html">Comapre</a></li>
+                <li><a href="arsenal.html">Arsenal</a></li>
+                <li><a href="replacement.html">Replace</a></li>
                 <li class="nav-right">
                     <a id="theme-toggle" class="theme-toggle">Dark Mode</a></li>
             </ul>
@@ -27,6 +27,9 @@
         <header>
             <img id="logo" src="bowl_iq_darkmode.png" width="400" alt="Bowl IQ Logo" class="logo">      
         </header>
+
+        <!-- Filter panel: narrows both the scatter plot and the table -->
+        <div id="filter-container"></div>
 
         <!-- Grid and table wrapper: side-by-side or stacked layout -->
         <div class="content-wrapper">
@@ -42,16 +45,6 @@
                         Y-Axis:
                         <select id="y-axis"></select>
                     </label>
-                    <label>
-                        Weight:
-                        <select id="weight-select">
-                            <option value="16">16 lb</option>
-                            <option value="15" selected>15 lb</option>
-                            <option value="14">14 lb</option>
-                            <option value="13">13 lb</option>
-                            <option value="12">12 lb</option>
-                        </select>
-                    </label>
                 </section>
 
                 <!-- Canvas and labels used to draw the bowling ball grid -->
@@ -64,7 +57,7 @@
 
             <!-- Table of plotted objects: dynamically populated by app.js with the plotted rows -->
             <section class="table-container">
-                <h2>Bowling Balls Plotted</h2>
+                <h2>Bowling Balls Plotted <span id="ball-count" class="ball-count"></span></h2>
                 <!-- Scrollable wrapper keeps the heading and column headers visible -->
                 <div class="table-scroll">
                     <div id="data-table"></div>
@@ -94,6 +87,8 @@
         <p>Purdue, ECE 50874, Bowling Ball Grid. For Educational Purposes - not a marketed product.</p>
     </footer>
 
+    <!-- Shared filter panel utility (must load before app.js) -->
+    <script src="filter-utils.js"></script>
     <!-- Main application script: handles data, plotting and table interactions -->
     <script src="app.js"></script>
 </body>
