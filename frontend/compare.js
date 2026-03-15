@@ -2,7 +2,7 @@
 
 let allBalls = [];
 let selectedBalls = [null, null]; // [slot0, slot1]
-let filterPanel   = null;         // FilterPanel instance, built after data loads
+let filterPanels  = [null, null]; // one FilterPanel per slot, built after data loads
 
 // All fields displayed in the comparison table, in order.
 // type 'text'   => plain string value
@@ -52,24 +52,22 @@ async function fetchBalls() {
         console.error('compare: failed to load balls', e);
         allBalls = [];
     }
-    filterPanel = new FilterPanel(document.getElementById('compare-filter-container'), {
-        onChange: () => { /* dropdowns refresh on next open/focus */ },
-        weightConfig: {
-            id: 'compare-weight',
-            options: [
-                { value: '16', label: '16 lb' },
-                { value: '15', label: '15 lb' },
-                { value: '14', label: '14 lb' },
-                { value: '13', label: '13 lb' },
-                { value: '12', label: '12 lb' },
-            ],
-            selected: '15',
-        },
-    });
-    filterPanel.build(allBalls);
+    const weightOptions = [
+        { value: '16', label: '16 lb' },
+        { value: '15', label: '15 lb' },
+        { value: '14', label: '14 lb' },
+        { value: '13', label: '13 lb' },
+        { value: '12', label: '12 lb' },
+    ];
 
-    // Register weight listener now that FilterPanel has rendered the element
-    document.getElementById('compare-weight').addEventListener('change', renderComparison);
+    [0, 1].forEach(idx => {
+        filterPanels[idx] = new FilterPanel(document.getElementById(`compare-filter-${idx}`), {
+            onChange: () => { /* dropdowns refresh on next open/focus */ },
+            weightConfig: { id: `compare-weight-${idx}`, options: weightOptions, selected: '15' },
+        });
+        filterPanels[idx].build(allBalls);
+        document.getElementById(`compare-weight-${idx}`).addEventListener('change', renderComparison);
+    });
 
     setupSlot(0);
     setupSlot(1);
@@ -83,10 +81,15 @@ function setupSlot(idx) {
     const dropdown = document.getElementById(`dropdown-${idx}`);
     const clearBtn = document.getElementById(`clear-${idx}`);
 
+    const getPool = () => {
+        const fp = filterPanels[idx];
+        const weight = parseInt(document.getElementById(`compare-weight-${idx}`).value, 10);
+        return fp ? allBalls.filter(b => fp.passes(b, weight)) : allBalls;
+    };
+
     input.addEventListener('input', () => {
         const q = input.value.toLowerCase().trim();
-        const weight = parseInt(document.getElementById('compare-weight').value, 10);
-        const pool = filterPanel ? allBalls.filter(b => filterPanel.passes(b, weight)) : allBalls;
+        const pool = getPool();
         const matches = q
             ? pool.filter(b =>
                 b.name.toLowerCase().includes(q) ||
@@ -96,9 +99,7 @@ function setupSlot(idx) {
     });
 
     input.addEventListener('focus', () => {
-        const weight = parseInt(document.getElementById('compare-weight').value, 10);
-        const pool = filterPanel ? allBalls.filter(b => filterPanel.passes(b, weight)) : allBalls;
-        showDropdown(dropdown, pool, idx);
+        showDropdown(dropdown, getPool(), idx);
     });
 
     // Hide dropdown when clicking outside
@@ -151,7 +152,8 @@ function renderComparison() {
         return;
     }
 
-    const weight = parseInt(document.getElementById('compare-weight').value, 10);
+    const weight0 = parseInt(document.getElementById('compare-weight-0').value, 10);
+    const weight1 = parseInt(document.getElementById('compare-weight-1').value, 10);
 
     let html = '<table class="compare-table">';
 
@@ -168,8 +170,8 @@ function renderComparison() {
             return;
         }
 
-        const v1 = b1 ? field.accessor(b1, weight) : null;
-        const v2 = b2 ? field.accessor(b2, weight) : null;
+        const v1 = b1 ? field.accessor(b1, weight0) : null;
+        const v2 = b2 ? field.accessor(b2, weight1) : null;
 
         html += '<tr class="ct-row">';
         html += `<td class="ct-label">${field.label}</td>`;
