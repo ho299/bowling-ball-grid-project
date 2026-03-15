@@ -25,7 +25,7 @@
 
         <!-- Header: site title and primary navigation -->
         <header>
-            <img id="logo" src="bowl_iq_lightmode.png" width="400" alt="Bowl IQ Logo" class="logo">      
+            <img id="logo" src="bowl_iq_darkmode.png" width="400" alt="Bowl IQ Logo" class="logo">      
         </header>
 
         <!-- Grid and table wrapper: side-by-side or stacked layout -->
@@ -42,6 +42,16 @@
                         Y-Axis:
                         <select id="y-axis"></select>
                     </label>
+                    <label>
+                        Weight:
+                        <select id="weight-select">
+                            <option value="16">16 lb</option>
+                            <option value="15" selected>15 lb</option>
+                            <option value="14">14 lb</option>
+                            <option value="13">13 lb</option>
+                            <option value="12">12 lb</option>
+                        </select>
+                    </label>
                 </section>
 
                 <!-- Canvas and labels used to draw the bowling ball grid -->
@@ -55,8 +65,10 @@
             <!-- Table of plotted objects: dynamically populated by app.js with the plotted rows -->
             <section class="table-container">
                 <h2>Bowling Balls Plotted</h2>
-                <!-- JavaScript will insert a <table> here showing each object's fields -->
-                <div id="data-table"></div>
+                <!-- Scrollable wrapper keeps the heading and column headers visible -->
+                <div class="table-scroll">
+                    <div id="data-table"></div>
+                </div>
             </section>
         </div>
 

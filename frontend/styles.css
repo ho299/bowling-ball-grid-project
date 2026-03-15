@@ -212,9 +212,10 @@ header h1 {
 .axis-label-y {
     position: absolute;
     top: 50%;
-    left: -20px;
-    transform: translateY(-50%) rotate(-90deg);
-    transform-origin: center;
+    left: 5px;
+    writing-mode: vertical-rl;
+    white-space: nowrap;
+    transform: translateY(-50%) rotate(180deg);
 }
 
 canvas {
@@ -229,13 +230,21 @@ canvas {
     border: 1px solid var(--border-color);
     flex: 1;
     min-width: 300px;
-    overflow-y: auto;
     max-height: 700px;
     border-radius: 4px;
+    display: flex;
+    flex-direction: column;
 }
 
 .table-container h2 {
     color: var(--text-primary);
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+.table-scroll {
+    overflow-y: auto;
+    flex: 1;
 }
 
 #data-table table {
@@ -255,6 +264,9 @@ canvas {
 #data-table th {
     background-color: var(--border-color);
     font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .selected-row {
