@@ -1,4 +1,4 @@
-const pool = require('../config/db'); // calling the db
+const pool = require('../config/db_credentials'); // calling the db
 
 //GET all the cores
 const getAllCores = async () => {
