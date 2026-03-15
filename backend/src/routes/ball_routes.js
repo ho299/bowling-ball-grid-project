@@ -1,4 +1,5 @@
 const express = require('express');
+const algorithm = require("../../algorithms/bowlingBallScoreAlgos")
 const router = express.Router();
 const ballQueries = require('../queries/ball_queries'); // calling sql queries
 const coreQueries = require('../queries/core_queries'); // calling sql queries
@@ -46,27 +47,46 @@ router.post('/', async (req, res) => {
             description: coverstock.description
         });
 
+        // CALL ALGORITHMS HERE TO GET THE VALUES FOR E_v_L, S_v_A AND HOOK
+        // finish_number is created from coverstock.name and factory_finish
+        //
+        
+        var finishNumber = algorithm.finishNametoNumber(coverstockFinish, coverstockName);
+        
+        // bowlingBall  = {rg:specs.rg,diff:specs.diff, mb_diff:spec.mb_diff, factory_finish:finishNumber};
+        // var hookPot = algorithm.hookPotential(bowlingBall);
+        // var eVL = algorithm.earlyVLate(bowlingBall);
+        // var sVA = algorithm.smoothVAngular(bowlingBall);
+
         const newBall = await ballQueries.createBall({
             name, image,brand, release_date, discontinued,
-            overseas, factory_finish, early_v_late, smooth_v_angular, hook_potential,
+            overseas, factory_finish, eVL, sVA, hookPot,
             core_id: createdCore.id,
             coverstock_id: createdCoverstock.id
         });
 
-        // CALL ALGORITHMS HERE TO GET THE VALUES FOR E_v_L, S_v_A AND HOOK
 
-        const createdSpecs = specs && specs.length > 0
-            ? await Promise.all(                         
-                specs.map(spec =>
-                    specQueries.createSpec({              
-                        ball_id: newBall.id,
-                        weight: spec.weight,
-                        rg: spec.rg,
-                        diff: spec.diff,
-                        mb_diff: spec.mb_diff         
-                    })
-                )
-            ) : [];
+       const createdSpecs = specs && specs.length > 0
+        ? await Promise.all(
+            specs.map(spec => {
+                const bowlingBall = {
+                    rg: spec.rg,
+                    diff: spec.diff,
+                    mb_diff: spec.mb_diff,
+                    factory_finish: finishNumber
+                };
+                return specQueries.createSpec({
+                    ball_id: newBall.id,
+                    weight: spec.weight,
+                    rg: spec.rg,
+                    diff: spec.diff,
+                    mb_diff: spec.mb_diff,
+                    // early_v_late: algorithm.earlyVLate(bowlingBall),
+                    // smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
+                    // hook_potential: algorithm.hookPotential(bowlingBall)
+                });
+            })
+        ) : [];
 
         res.status(201).json({ ...newBall, specs: createdSpecs }); 
 
