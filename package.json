@@ -4,9 +4,9 @@
   "description": "ECE50874 - Bowling Ball grid project repo",
   "main": "index.js",
   "scripts": {
-    "start": "node backend/src/app.js",
-    "dev": "nodemon backend/src/app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "backend": "node ./backend/src/app.js",
+    "frontend": "node ./frontend/startup.js",
+    "start": "npm run frontend & npm run backend"
   },
   "repository": {
     "type": "git",
