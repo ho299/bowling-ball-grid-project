@@ -1,35 +1,24 @@
-
-// app.js
 const express = require('express');
+const cors = require('cors');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../..', '.env') });
 
 const app = express();
-const port = 3001;
+app.use(cors());
+app.use(express.json());
 
-console.log("Backend Starting...")
-const init = async() => {
-    //page routing below:
-    const specRoutes = require('./routes/specs_routes');
-    app.use('/api/specs', specRoutes);
-    
-    const coverstockRoutes = require('./routes/coverstock_routes');
-    app.use('/api/coverstocks', coverstockRoutes);
-    
-    const coreRoutes = require('./routes/core_routes');
-    app.use('/api/cores', coreRoutes);
-    
-    const ballRoutes = require('./routes/ball_routes');
-    app.use('/api/ball', ballRoutes);
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../..', 'frontend')));
 
-    app.get('/', (req, res) => {
-    res.send('Hello World!');
-    });
+const ballRoutes = require('./routes/ball_routes');
+const coreRoutes = require('./routes/core_routes');
+const coverstockRoutes = require('./routes/coverstock_routes');
+const specsRoutes = require('./routes/specs_routes');
 
-    app.listen(port, () => {
-    console.log(`Backend Open on Port: ${port}`);
-    });
-};
+app.use('/api/balls', ballRoutes);
+app.use('/api/cores', coreRoutes);
+app.use('/api/coverstocks', coverstockRoutes);
+app.use('/api/specs', specsRoutes);
 
-init();
-// console.log("Backend Loading...")
-
-// module.exports = app;
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

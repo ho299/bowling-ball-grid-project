@@ -14,8 +14,9 @@ router.get('/', async (req, res) => {
         res.status(200).json(balls);
     }
     catch (error) {
+        console.error('GET /api/balls error:', error.message);
         res.status(500).json({ error: 'Failed to retrieve bowling balls' });
-    }   
+    }
 });
 //Get /api/ball/:id - Get a particular ball by id
 router.get('/:id', async (req, res) => {

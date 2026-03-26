@@ -212,9 +212,10 @@ header h1 {
 .axis-label-y {
     position: absolute;
     top: 50%;
-    left: -20px;
-    transform: translateY(-50%) rotate(-90deg);
-    transform-origin: center;
+    left: 5px;
+    writing-mode: vertical-rl;
+    white-space: nowrap;
+    transform: translateY(-50%) rotate(180deg);
 }
 
 canvas {
@@ -229,13 +230,21 @@ canvas {
     border: 1px solid var(--border-color);
     flex: 1;
     min-width: 300px;
-    overflow-y: auto;
     max-height: 700px;
     border-radius: 4px;
+    display: flex;
+    flex-direction: column;
 }
 
 .table-container h2 {
     color: var(--text-primary);
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+.table-scroll {
+    overflow-y: auto;
+    flex: 1;
 }
 
 #data-table table {
@@ -255,6 +264,9 @@ canvas {
 #data-table th {
     background-color: var(--border-color);
     font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .selected-row {
@@ -290,4 +302,584 @@ footer {
         flex: none;
         width: 100%;
     }
+}
+
+/* ── Compare page ─────────────────────────────────────────────────────────── */
+
+.compare-page {
+    width: 100%;
+    padding: 10px 0 30px;
+}
+
+/* Selector row */
+.compare-selectors {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.ball-slot {
+    flex: 1;
+    min-width: 0;
+}
+
+.ball-slot-label {
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ball-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ball-search-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    min-width: 0;
+}
+
+.ball-search-input:focus {
+    outline: none;
+    border-color: #0077cc;
+}
+
+.clear-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 9px;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.clear-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.ball-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 36px; /* leave room for clear button */
+    max-height: 260px;
+    overflow-y: auto;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 10px;
+}
+
+.dropdown-item:hover {
+    background-color: var(--border-color);
+}
+
+.di-name {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.di-brand {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.vs-divider {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-secondary);
+    padding-top: 30px; /* align with inputs */
+    flex-shrink: 0;
+    width: 36px;
+    text-align: center;
+}
+
+/* Controls bar */
+.compare-controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.compare-controls select {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Prompt shown before balls are selected */
+.compare-prompt {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 15px;
+    padding: 40px 0;
+}
+
+/* Comparison table */
+.compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.ct-label-col {
+    width: 20%;
+}
+
+.ct-ball-col {
+    width: 40%;
+    text-align: center;
+    padding: 12px 16px;
+    background-color: var(--bg-secondary);
+    border-bottom: 2px solid #0077cc;
+}
+
+.ct-ball-img {
+    display: block;
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    margin: 0 auto 10px;
+}
+
+.ct-ball-img-placeholder {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 10px;
+}
+
+.ct-ball-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.ct-ball-brand {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.ct-empty {
+    color: var(--text-secondary);
+    font-size: 20px;
+}
+
+/* Section header rows */
+.ct-section td {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    background-color: var(--border-color);
+    border-top: 1px solid var(--border-light);
+}
+
+/* Data rows */
+.ct-row {
+    border-bottom: 1px solid var(--border-light);
+}
+
+.ct-row:nth-child(even) td {
+    background-color: var(--bg-primary);
+}
+
+.ct-row:nth-child(odd) td {
+    background-color: var(--bg-secondary);
+}
+
+.ct-label {
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.ct-value {
+    padding: 9px 16px;
+    font-size: 14px;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.ct-nodata {
+    color: var(--text-secondary);
+}
+
+/* Bar visuals */
+.ct-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ct-bar-bg {
+    flex: 1;
+    height: 10px;
+    background-color: var(--border-light);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.ct-bar-fill {
+    height: 100%;
+    background-color: #0077cc;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.ct-bar-val {
+    font-size: 13px;
+    white-space: nowrap;
+    min-width: 40px;
+    text-align: right;
+}
+
+body.dark-mode .ct-bar-fill {
+    background-color: #4da6ff;
+}
+
+/* ── Filter Panel ─────────────────────────────────────────────────────────── */
+
+/* Container lives between the axis controls and content-wrapper (homepage) */
+#filter-container {
+    margin-bottom: 16px;
+}
+
+/* Two-column filter row for compare page — mirrors .compare-selectors layout */
+.compare-filter-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.compare-filter-col {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Invisible spacer that matches the width of .vs-divider */
+.vs-spacer {
+    flex-shrink: 0;
+    width: 36px;
+}
+
+.fp-panel {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.fp-summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--text-primary);
+    user-select: none;
+    list-style: none; /* remove default triangle in some browsers */
+}
+
+.fp-summary::-webkit-details-marker { display: none; }
+
+.fp-summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 10px;
+    transition: transform 0.2s;
+    color: var(--text-secondary);
+}
+
+.fp-panel[open] > .fp-summary::before {
+    transform: rotate(90deg);
+}
+
+.fp-count {
+    font-weight: normal;
+    font-size: 12px;
+    color: #0077cc;
+    margin-left: 4px;
+}
+
+.fp-body {
+    border-top: 1px solid var(--border-color);
+    padding: 12px 14px 6px;
+}
+
+/* Responsive grid of filter controls */
+.fp-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    margin-bottom: 10px;
+}
+
+.fp-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1 1 150px;
+    min-width: 140px;
+}
+
+/* Range controls are wider so the slider has room */
+.fp-item-wide {
+    flex: 2 1 280px;
+    min-width: 240px;
+}
+
+.fp-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Text input */
+.fp-text {
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.fp-text:focus { outline: none; border-color: #0077cc; }
+
+/* Select dropdown */
+.fp-select {
+    padding: 5px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* Toggle group (Any / No / Yes) */
+.fp-toggle-group {
+    display: flex;
+}
+
+.fp-toggle {
+    flex: 1;
+    padding: 4px 0;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.fp-toggle:first-child  { border-radius: 4px 0 0 4px; }
+.fp-toggle:last-child   { border-radius: 0 4px 4px 0; }
+.fp-toggle:not(:first-child) { border-left: none; }
+
+.fp-toggle.active {
+    background: #0077cc;
+    color: #fff;
+    border-color: #0077cc;
+}
+
+/* Number input row */
+.fp-num-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fp-num {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 12px;
+    text-align: center;
+}
+
+.fp-num:focus { outline: none; border-color: #0077cc; }
+
+.fp-sep {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* Dual range slider */
+.fp-dual-slider {
+    position: relative;
+    height: 28px;
+    margin-top: 2px;
+}
+
+.fp-track {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: var(--border-light);
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 2px;
+}
+
+.fp-fill {
+    position: absolute;
+    height: 100%;
+    background: #0077cc;
+    border-radius: 2px;
+}
+
+.fp-thumb {
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    height: 0;
+    outline: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fp-thumb::-webkit-slider-thumb {
+    pointer-events: all;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #0077cc;
+    cursor: pointer;
+    border: 2px solid var(--bg-secondary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+.fp-thumb::-moz-range-thumb {
+    pointer-events: all;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #0077cc;
+    cursor: pointer;
+    border: 2px solid var(--bg-secondary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+/* Static value (when min === max, no slider needed) */
+.fp-static-val {
+    font-size: 13px;
+    color: var(--text-primary);
+    padding: 5px 0;
+}
+
+/* Reset button */
+.fp-reset-row {
+    padding-top: 6px;
+    border-top: 1px solid var(--border-light);
+    margin-top: 4px;
+}
+
+.fp-reset-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.fp-reset-btn:hover {
+    background: var(--border-color);
+}
+
+/* Ball count badge in homepage table heading */
+.ball-count {
+    font-size: 13px;
+    font-weight: normal;
+    color: var(--text-secondary);
+}
+
+body.dark-mode .fp-fill,
+body.dark-mode .fp-thumb::-webkit-slider-thumb,
+body.dark-mode .fp-thumb::-moz-range-thumb,
+body.dark-mode .fp-toggle.active {
+    background: #4da6ff;
+}
+
+body.dark-mode .fp-toggle.active {
+    border-color: #4da6ff;
+}
+
+body.dark-mode .fp-count {
+    color: #4da6ff;
+}
+
+/* ── Filter Panel end ─────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .compare-selectors {
+        flex-direction: column;
+    }
+
+    .vs-divider {
+        padding-top: 0;
+        text-align: center;
+    }
+
+    .compare-table {
+        font-size: 12px;
+    }
+
+    .ct-label-col { width: 20%; }
+    .ct-ball-col  { width: 40%; }
 }

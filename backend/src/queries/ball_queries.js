@@ -2,12 +2,21 @@ const pool = require('../config/db_credentials'); // calling the db
 
 //GET all the bowling balls
 const getAllBalls = async () => {
-  const query = `SELECT b.*, 
+  const query = `SELECT b.*,
               c.name AS core_name, c.type AS core_type,
-              cs.name AS coverstock_name, cs.type AS coverstock_type 
-              FROM ball b 
-              LEFT JOIN core c ON c.id = b.core_id 
+              cs.name AS coverstock_name, cs.type AS coverstock_type,
+              COALESCE(
+                json_agg(
+                  json_build_object('weight', s.weight, 'rg', s.rg, 'diff', s.diff, 'mb_diff', s.mb_diff)
+                  ORDER BY s.weight
+                ) FILTER (WHERE s.ball_id IS NOT NULL),
+                '[]'
+              ) AS specs
+              FROM ball b
+              LEFT JOIN core c ON c.id = b.core_id
               LEFT JOIN coverstock cs ON cs.id = b.coverstock_id
+              LEFT JOIN specs s ON s.ball_id = b.id
+              GROUP BY b.id, c.name, c.type, cs.name, cs.type
               ORDER BY b.release_date DESC`;
   const result = await pool.query(query);
   return result.rows;
