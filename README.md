@@ -83,7 +83,7 @@ psql -U your_postgres_username -d bowling_db -c "SELECT COUNT(*) FROM ball;"
 From the project root, run:
 
 ```bash
-npm run dev
+npm run backend
 ```
 
 This starts the Express API on `http://localhost:3000` using nodemon, which automatically restarts the server when backend files change.
