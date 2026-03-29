@@ -46,7 +46,7 @@ function getSpec(ball, weight, field) {
 //fetch data from backend
 async function fetchData() {
     try {
-        const response = await fetch('http://localhost:3000/api/balls');
+        const response = await fetch(location.origin+'/api/balls');
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         bowlingBalls = await response.json();
     } catch (error) {

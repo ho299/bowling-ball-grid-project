@@ -1,0 +1,2 @@
+./startupFrontEnd.sh
+./startupBackEnd.sh

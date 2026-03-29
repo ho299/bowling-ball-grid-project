@@ -44,7 +44,7 @@ function getArsenalBalls() {
 
 async function fetchBalls() {
     try {
-        const res = await fetch('http://localhost:3000/api/balls');
+        const res = await fetch(location.origin+'/api/balls');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         allBalls = await res.json();
     } catch (e) {
