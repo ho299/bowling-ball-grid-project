@@ -3,7 +3,7 @@
 -- Then connect through your client before running the rest.
 
 --------------------- CATALOG SCHEMA
-
+GRANT ALL PRIVILEGES ON DATABASE bowling TO docker_user;
 -- Core table
 CREATE TABLE core (
     id          SERIAL PRIMARY KEY,

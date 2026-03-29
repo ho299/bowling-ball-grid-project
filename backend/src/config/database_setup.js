@@ -22,7 +22,7 @@ function parseSpec(specString) {
 }
 
 async function seed() {
-    const csvFile = fs.readFileSync(path.join(__dirname, '../../../data/bowling_ball_data.csv'), 'utf8');
+    const csvFile = fs.readFileSync(path.join(__dirname, './data/bowling_ball_data.csv'), 'utf8');
     const rows = parse(csvFile, { columns: true, skip_empty_lines: true });
 
     const client = await pool.connect();
