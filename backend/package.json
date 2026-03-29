@@ -1,0 +1,17 @@
+{
+    "name":"backend",
+    "version":"1.0.0.beta",
+    "author": "",
+    "dependencies": {
+        "express": "5.2.1",
+        "path": "0.12.7",
+        "cors": "2.8.6",
+        "dotenv": "^17.2.4",
+        "pg": "^8.18.0",
+        "csv-parse": "6.2.1"
+    },
+    "main":"src/app.js",
+    "scripts":{
+        "start": "node src/config/database_setup.js && node --max-old-space-size=4096 src/app.js"
+    }
+}

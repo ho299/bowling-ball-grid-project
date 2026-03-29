@@ -4,7 +4,7 @@ const APIROUTE = process.env.dev=="local"?"http://localhost:3000":"http://backen
 const express = require('express');
 const path = require('path');
 const app = express();
-const port = 3000;
+const port = 80;
 
 const defaultBalls = [
     {
@@ -41,7 +41,7 @@ const defaultBalls = [
 
 //page routing below:
 app.get('/', (req, res) => {
-  res.redirect('/homepage')
+  res.send('Hello World!');
 });
 
 app.get('/homepage', (req, res) => {
