@@ -7,7 +7,7 @@ GRANT ALL PRIVILEGES ON DATABASE bowling TO docker_user;
 -- Core table
 CREATE TABLE core (
     id          SERIAL PRIMARY KEY,
-    name        TEXT NOT NULL,
+    name        TEXT NOT NULL UNIQUE,
     description TEXT,
     type        TEXT
 );
@@ -15,7 +15,7 @@ CREATE TABLE core (
 -- Coverstock table
 CREATE TABLE coverstock (
     id          SERIAL PRIMARY KEY,
-    name        TEXT NOT NULL,
+    name        TEXT NOT NULL UNIQUE,
     description TEXT,
     type        TEXT
 );
