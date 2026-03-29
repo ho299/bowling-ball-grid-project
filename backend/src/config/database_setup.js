@@ -4,17 +4,32 @@ const { parse } = require('csv-parse/sync');
 const algorithm = require('../../algorithms/bowlingBallScoreAlgos');
 const pool = require('./db_credentials');
 
+function parseDate(dateStr) {
+    if (!dateStr || dateStr.trim() === '') return null;
+    const [mon, yr] = dateStr.split('-');
+    if (!mon || !yr) return null;
+    return `20${yr}-${new Date(`${mon} 1 2000`).getMonth() + 1}-01`;
+}
+
+function parseNameFromUrl(url) {
+    if (!url) return null;
+    const segment = url.split('/').pop();
+    return segment
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function parseSpec(specString) {
-    if (!specString || specString.trim() === '') return null;
+    if (!specString || specString.trim() === '' || specString.trim() === 'NULL') return null;  // ← add NULL check
     try {
         const cleaned = specString
             .replace(/'/g, '"')
             .replace(/MB Diff/g, 'MB_Diff');
         const parsed = JSON.parse(cleaned);
         return {
-            rg:      parsed.RG      ?? null,
-            diff:    parsed.Diff    ?? null,
-            mb_diff: parsed.MB_Diff ?? null
+            rg:      (parsed.RG      === 'NULL' || parsed.RG      == null) ? null : parsed.RG,
+            diff:    (parsed.Diff    === 'NULL' || parsed.Diff    == null) ? null : parsed.Diff,
+            mb_diff: (parsed.MB_Diff === 'NULL' || parsed.MB_Diff == null) ? null : parsed.MB_Diff
         };
     } catch (e) {
         return null;
@@ -75,7 +90,7 @@ async function seed() {
                 }
             }
 
-            // --- Ball (algo columns removed — they live on specs, not ball) ---
+            // --- Ball ---
             const ballResult = await client.query(
                 `INSERT INTO ball (
                     core_id, coverstock_id, name, image, brand,
@@ -85,10 +100,10 @@ async function seed() {
                 [
                     coreId,
                     coverstockId,
-                    row.name,                           
+                    parseNameFromUrl(row.url),
                     row.image_url,
-                    row.brand,                          
-                    row.release_date || null,
+                    row.brand,
+                    row.release_date ? parseDate(row.release_date) : null,  // ← fixed
                     row.discontinued === 'true',
                     row.overseas === 'true',
                     row.factory_finish
@@ -107,7 +122,7 @@ async function seed() {
             }
 
             await client.query('COMMIT');
-            console.log(`✓ Inserted: ${row.name}`);
+            console.log(`✓ Inserted: ${parseNameFromUrl(row.url)}`);
         }
 
         console.log('Seeding complete.');
