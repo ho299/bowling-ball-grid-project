@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/src/config/database_script.sql:/docker-entrypoint-initdb.d/init.sql
+  seed:
+    build: ./backend
+    command: node src/config/database_setup.js
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: "no"
+
+    
+volumes:
+  pgdata:
+
