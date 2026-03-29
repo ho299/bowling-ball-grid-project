@@ -1,0 +1,1 @@
+const pool = require('../config/db'); // calling the db

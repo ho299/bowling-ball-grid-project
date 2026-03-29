@@ -34,7 +34,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { name, image, brand, release_date, discontinued,
-            overseas, factory_finish, early_v_late, smooth_v_angular, hook_potential, core, coverstock, specs } = req.body;
+            overseas, factory_finish, core, coverstock, specs } = req.body;
 
         const createdCore = await coreQueries.createCore({
             name: core.name,
@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
             description: coverstock.description
         });
         
-        var finishNumber = algorithm.finishNametoNumber(factory_finish, coverstock.name);
+        const finishNumber = algorithm.finishNametoNumber(factory_finish, coverstock.name);
         
         const newBall = await ballQueries.createBall({
             name, image,brand, release_date, discontinued,
@@ -92,7 +92,7 @@ router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { name, brand, image, release_date, discontinued, overseas, factory_finish,core_id, coverstock_id } = req.body;
-const updatedBall = await ballQueries.updateBall(id, { name, brand, image, release_date, discontinued, overseas, factory_finish,core_id, coverstock_id });
+        const updatedBall = await ballQueries.updateBall(id, { name, brand, image, release_date, discontinued, overseas, factory_finish,core_id, coverstock_id });
         
         if (!updatedBall) return res.status(404).json({ error: 'Ball not found' });
         

@@ -12,12 +12,13 @@ const getAllBalls = async () => {
   const result = await pool.query(query);
   return result.rows;
 }
+
 //GET a particular ball by id
 const getBallById = async (id) => {
   const query = `SELECT b.*,
                 c.name AS core_name, c.type AS core_type,
                 cs.name AS coverstock_name, cs.type AS coverstock_type,
-                json_agg(s.*) AS specs
+                COALESCE(json_agg(s.*) FILTER (WHERE s.ball_id IS NOT NULL), '[]') AS specs
                 FROM ball b
                 LEFT JOIN specs s ON s.ball_id = b.id
                 LEFT JOIN core c ON c.id = b.core_id
@@ -40,7 +41,7 @@ const createBall = async ({name,brand=null,image=null,release_date,discontinued,
 
 //PUT - update ball information
 const updateBall = async (id, { name = null, brand = null, image = null, release_date = null, discontinued = null, overseas = null, factory_finish = null , core_id = null, coverstock_id = null }) => {
-    const query = `UPDATE ball 
+    const query =`UPDATE ball 
                   SET name = COALESCE($1, name), 
                     brand = COALESCE($2, brand), 
                     image = COALESCE($3, image), 
