@@ -866,6 +866,180 @@ body.dark-mode .fp-count {
 
 /* ── Filter Panel end ─────────────────────────────────────────────────────── */
 
+/* ── Login button (nav) ───────────────────────────────────────────────────── */
+
+#login-btn {
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    border: 1px solid var(--nav-text);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: Helvetica, sans-serif;
+    margin: 0 8px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#login-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+#login-btn.logged-in {
+    border-color: var(--nav-active-bg);
+    color: var(--nav-active-bg);
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Auth Modal ───────────────────────────────────────────────────────────── */
+
+.auth-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-modal-overlay.open {
+    display: flex;
+}
+
+.auth-modal {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 28px 32px 24px;
+    width: 100%;
+    max-width: 380px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.auth-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.auth-modal-close:hover {
+    color: var(--text-primary);
+}
+
+.auth-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 20px;
+    gap: 0;
+}
+
+.auth-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 0;
+    font-size: 14px;
+    font-family: Helvetica, sans-serif;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.auth-tab.active {
+    color: #0077cc;
+    border-bottom-color: #0077cc;
+    font-weight: bold;
+}
+
+.auth-tab:hover:not(.active) {
+    color: var(--text-primary);
+}
+
+.auth-panel.hidden {
+    display: none;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 14px;
+}
+
+.auth-field label {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+
+.auth-field input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: Helvetica, sans-serif;
+}
+
+.auth-field input:focus {
+    outline: none;
+    border-color: #0077cc;
+}
+
+.auth-error {
+    font-size: 13px;
+    color: #cc3333;
+    min-height: 18px;
+    margin-bottom: 8px;
+}
+
+body.dark-mode .auth-error {
+    color: #ff6b6b;
+}
+
+.auth-submit {
+    width: 100%;
+    padding: 10px;
+    background: #0077cc;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: Helvetica, sans-serif;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.auth-submit:hover:not(:disabled) {
+    background: #005fa3;
+}
+
+.auth-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Auth Modal end ───────────────────────────────────────────────────────── */
+
 @media (max-width: 640px) {
     .compare-selectors {
         flex-direction: column;
