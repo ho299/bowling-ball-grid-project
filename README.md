@@ -7,7 +7,7 @@ ECE50874 - Bowling Ball grid project repo
 
 ## Local Testing Setup
 
-This is a guide to set up the project for local development from a fresh clone. I ran the backend with npm in the terminal; the frontend with the VS Code Live Server extension.
+This is a guide to set up the project for local development from a fresh clone.
 
 ### Prerequisites
 
@@ -16,7 +16,6 @@ Make sure the following are installed before starting:
 - [Node.js](https://nodejs.org/) (v18 or later)
 - [PostgreSQL](https://www.postgresql.org/) (v14 or later)
 - [Python 3](https://www.python.org/) (for the database seed script)
-- VS Code with the [Live Server extension](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) installed
 
 ---
 
@@ -32,14 +31,14 @@ npm install
 
 ### Step 2 — Configure environment variables
 
-Create or update your exsisting `.env` file in the project root (it is git-ignored via Sarah's forsight):
+Create or update your existing `.env` file in the project root and make sure it is git-ignored:
 
 ```env
 # Leave DATABASE_URL commented out for local dev — only set on Render
 # DATABASE_URL=postgresql://...
 
 # Local PostgreSQL credentials
-DB_USER=your_postgres_username  #this defaulted to my sys username (I think a MacOS thing)
+DB_USER=your_postgres_username
 DB_HOST=localhost
 DB_NAME=bowling_db
 DB_PASSWORD=your_postgres_password   # leave blank if none set
@@ -80,75 +79,99 @@ psql -U your_postgres_username -d bowling_db -c "SELECT COUNT(*) FROM ball;"
 
 ### Step 4 — Start the backend server
 
-From the project root, run:
+Open a terminal in the project root and run:
 
 ```bash
 npm run backend
 ```
 
-This starts the Express API on `http://localhost:3000` using nodemon, which automatically restarts the server when backend files change.
+This starts the Express API on `http://localhost:3000`.
 
 You should see output similar to:
 
 ```
-[nodemon] starting `node backend/src/app.js`
 Server running on port 3000
 ```
 
-Leave this terminal open while testing.
+Leave this terminal open for the duration of your testing session.
 
 ---
 
-### Step 5 — Start the frontend with Live Server
+### Step 5 — Start the frontend
 
-1. Open the project folder in VS Code
-2. Open `frontend/homepage.html`
-3. Click **Go Live** in the VS Code status bar (bottom right), or right-click the file and select **Open with Live Server**
+Open a second terminal and run:
 
-Live Server will open the page in your browser at `http://127.0.0.1:5500/frontend/homepage.html` (port may vary).
+```bash
+dev=local node frontend/frontendStartup.js
+```
 
-> **Important:** The frontend fetches data from `http://localhost:3000/api/balls`. The backend server from Step 4 **must be running** before loading the page, or the app will fall back to placeholder data.
+This starts a lightweight Express server on port 80 that serves the static frontend files and proxies `/api/balls` requests to the backend. Setting `dev=local` tells the proxy to forward requests to `http://localhost:3000` (your local backend) rather than the Docker container hostname.
+
+Open your browser to:
+
+```
+http://localhost/homepage.html
+```
+
+> **Note:** `package.json` has a `"frontend"` script but it references the wrong filename (`startup.js` instead of `frontendStartup.js`), so `npm run start` and `npm run frontend` will not work as written. Use the direct `node` command above until this is fixed.
 
 ---
 
 ### Step 6 — Verify everything is working
 
-With both the backend server and Live Server running, open the homepage in your browser. You should see:
+With both the backend (Step 4) and frontend server (Step 5) running, navigate to the pages below and confirm each one works:
 
-- Bowling balls plotted on the canvas grid
-- A populated table below/beside the canvas
-- Working X-Axis, Y-Axis, and Weight dropdowns
+| Page | URL (Option A) | What to check |
+|---|---|---|
+| Homepage | `/homepage.html` | Balls plotted on grid, table populated, axis/weight dropdowns work |
+| Compare | `/compare.html` | Ball search returns results, side-by-side comparison table renders |
+| Arsenal | `/arsenal.html` | Ball search returns results, adding a ball saves to the card list, scores and usage fields save correctly |
+| Replace | `/replacement.html` | Database mode ball search returns results, replacement cards appear with match % after selecting a ball |
 
-If the grid shows only placeholder balls (Ball A, Ball B, Ball C), check the browser console (`F12 → Console`) for errors — the most common causes are the backend not running or the database being empty. In chrome you can use the Developer tools to check for errors (Three Dot [upper right] > More Tools > Developer Tools)
+If the grid or dropdowns show only placeholder balls (Ball A, Ball B, Ball C), open the browser developer console (`F12 → Console`) and look for fetch errors — the most common causes are the backend not running or the database being empty.
 
 ---
 
 ### Stopping local servers
 
-- **Backend:** Press `Ctrl+C` in the terminal running `npm run dev`
-- **Live Server:** Click **Port 5500** in the VS Code status bar to stop it, or close VS Code
+- **Backend:** Press `Ctrl+C` in the terminal running `npm run backend`
+- **Frontend server:** Press `Ctrl+C` in the terminal running `node frontend/frontendStartup.js`
 
 ---
 
-### Project structure at time of this commit 15MAR2026
+### Project structure (30 MAR 2026)
 
 ```
 bowling-ball-grid-project/
 ├── backend/
+│   ├── algorithms/
+│   │   └── bowlingBallScoreAlgos.js  # Scoring algorithm utilities
 │   └── src/
-│       ├── app.js              # Express entry point
+│       ├── app.js                    # Express API entry point
 │       ├── config/
-│       │   ├── db.js           # PostgreSQL connection pool
-│       │   └── database_script.sql  # Schema (run once to create tables)
-│       ├── queries/            # SQL query functions
-│       └── routes/             # API route handlers
+│       │   ├── db_credentials.js     # PostgreSQL connection pool
+│       │   └── database_setup.js     # Schema setup
+│       ├── queries/                  # SQL query functions (ball, core, coverstock, specs)
+│       └── routes/                   # API route handlers
 ├── data/
-│   ├── bowling_ball_data.csv   # Source data for seeding
-│   └── seed.py                 # Seed script — loads CSV into PostgreSQL
+│   ├── bowling_ball_data.csv         # Source data for seeding
+│   ├── validation_data.json          # Validation reference data
+│   └── seed.py                       # Seed script — loads CSV into PostgreSQL
 ├── frontend/
-│   ├── homepage.html           # Main page
-│   ├── app.js                  # Frontend logic (fetch, plot, table)
-│   └── styles.css              # Stylesheet
-├── .env                        # Local credentials (git-ignored — create manually)
+│   ├── homepage.html                 # Grid/scatter plot + filter panel
+│   ├── compare.html                  # Side-by-side ball comparison
+│   ├── arsenal.html                  # Personal ball collection with scores and usage
+│   ├── replacement.html              # Find replacement balls (arsenal or database)
+│   ├── index.html                    # AWS Amplify redirect shim
+│   ├── app.js                        # Homepage logic (fetch, plot, table, filters)
+│   ├── compare.js                    # Comparison page logic
+│   ├── arsenal.js                    # Arsenal management (localStorage-backed)
+│   ├── replacement.js                # Replacement scoring and search logic
+│   ├── auth.js                       # Login/create account modal (API calls placeholder)
+│   ├── filter-utils.js               # Reusable FilterPanel class
+│   ├── theme.js                      # Dark/light mode toggle (shared by non-homepage pages)
+│   ├── frontendStartup.js            # Node/Express static server + /api/balls proxy
+│   └── styles.css                    # Shared stylesheet
+├── .env                              # Local credentials (git-ignored — create manually)
 └── package.json
 ```
