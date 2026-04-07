@@ -27,10 +27,7 @@ const getGapFinderBalls = async (ids,discontinued,overseas) => {
     WHERE id IN (SELECT value FROM json_each($1))
   )
   SELECT 
-      t.id,
-      t.early_v_late,
-      t.smooth_v_angular,
-      t.hook_potential,
+      t.*,
       MIN(SQRT(
           POWER(t.early_v_late - sb.early_v_late, 2) + 
           POWER(t.smooth_v_angular - sb.smooth_v_angular, 2) + 
@@ -39,7 +36,7 @@ const getGapFinderBalls = async (ids,discontinued,overseas) => {
     sb.*,
     b.*
   FROM specs t
-  INNER JOIN ball b ON b.id=a.id AND ($2 IS NULL OR b.discontinued=$2) AND ($3 IS NULL OR b.overseas=$3)
+  INNER JOIN ball b ON b.id=t.id AND ($2 IS NULL OR b.discontinued=$2) AND ($3 IS NULL OR b.overseas=$3)
   CROSS JOIN sourceBalls sb ON t.weight=sb.weight
   WHERE t.id NOT IN (SELECT source_id FROM sourceBalls)
   GROUP BY t.id, t.early_v_late, t.smooth_v_angular, t.hook_potential
