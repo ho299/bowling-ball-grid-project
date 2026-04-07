@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Page metadata -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowling Ball Grid Replacement Page</title>
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Page content wrapper: scales to viewport -->
+    <div class="main-content">
+        <!-- Site Navigation -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="homepage.html">Home</a></li>
+                <li><a href="compare.html">Compare</a></li>
+                <li><a href="arsenal.html">Arsenal</a></li>
+                <li><a class="active" href="replacement.html">Replace</a></li>
+                <li class="nav-right">
+                    <a id="theme-toggle" class="theme-toggle">Dark Mode</a>
+                </li>
+                <li><button id="login-btn">Login</button></li>
+            </ul>
+        </nav>
+
+        <header>
+            <img id="logo" src="bowl_iq_lightmode.png" alt="Bowl IQ Logo" class="logo">
+        </header>
+
+        <!-- Replace page body -->
+        <div class="replace-page">
+
+            <!-- Method toggle: choose pool to search from -->
+            <div class="replacement-method-selector">
+                <div class="rp-method-toggle">
+                    <button id="method-arsenal" class="rp-method-btn active">From Arsenal</button>
+                    <button id="method-database" class="rp-method-btn">From Database</button>
+                </div>
+            </div>
+
+            <!-- Ball picker: search for the ball you want to replace -->
+            <div class="rp-picker-area">
+                <div class="rp-picker-label">Select ball to replace</div>
+                <div class="ball-search-wrapper">
+                    <input type="text" id="rp-search" class="ball-search-input"
+                        placeholder="Search balls..." autocomplete="off">
+                    <button class="clear-btn" id="rp-clear">&times;</button>
+                    <div class="ball-dropdown" id="rp-dropdown"></div>
+                </div>
+                <!-- Shown only in Arsenal mode when no arsenal balls are saved -->
+                <p id="rp-arsenal-empty" class="rp-notice" style="display:none">
+                    Your arsenal is empty. Add balls on the Arsenal page to use Arsenal mode.
+                </p>
+            </div>
+
+            <!-- Results: shown after a ball is selected -->
+            <div id="rp-results-section" style="display:none">
+                <div class="rp-controls">
+                    <label class="rp-weight-label">Weight:
+                        <select id="rp-weight" class="fp-select">
+                            <option value="16">16 lb</option>
+                            <option value="15" selected>15 lb</option>
+                            <option value="14">14 lb</option>
+                            <option value="13">13 lb</option>
+                            <option value="12">12 lb</option>
+                        </select>
+                    </label>
+                </div>
+                <div id="rp-results"></div>
+            </div>
+
+        </div>
+
+    </div>
+    <!-- Footer: copyright and small print (fixed at bottom) -->
+    <footer>
+        <p>&copy; ECE 50874 Bowling Ball Grid. For Educational Purposes - not a marketed product.</p>
+    </footer>
+    <script src="theme.js"></script>
+    <script src="replacement.js"></script>
+    <script src="auth.js"></script>
+</body>

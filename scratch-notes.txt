@@ -1,0 +1,15 @@
+start local postgresql services:
+brew services start postgresql@16
+
+stop local postgresql services:
+TODO
+
+create the postgre role:
+psql -U $(whoami) postgres
+CREATE ROLE postgres WITH SUPERUSER LOGIN;
+
+create the DB and tables from the script:
+psql -U postgres -f backend/src/config/database_script.sql
+
+verify it worked:
+psql -U postgres -d bowling_db -c "\dt"

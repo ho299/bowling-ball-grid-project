@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Page metadata -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowling Ball Grid Arsenal Page</title>
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Page content wrapper: scales to viewport -->
+    <div class="main-content">
+        <!-- Site Navigation -->
+        <nav class="main-nav">
+            <ul>
+                <li><a href="homepage.html">Home</a></li>
+                <li><a href="compare.html">Compare</a></li>
+                <li><a class="active" href="arsenal.html">Arsenal</a></li>
+                <li><a href="replacement.html">Replace</a></li>
+                <li class="nav-right">
+                    <a id="theme-toggle" class="theme-toggle">Dark Mode</a>
+                </li>
+                <li><button id="login-btn">Login</button></li>
+            </ul>
+        </nav>
+
+        <header>
+            <img id="logo" src="bowl_iq_lightmode.png" alt="Bowl IQ Logo" class="logo">
+        </header>
+
+        <div class="arsenal-page">
+
+            <!-- Add a ball section -->
+            <section class="arsenal-add-section">
+                <h2 class="arsenal-section-heading">Add a Ball</h2>
+                <div class="arsenal-add-form">
+
+                    <div class="arsenal-search-area">
+                        <div class="fp-label">Ball Name</div>
+                        <div class="ball-search-wrapper">
+                            <input type="text" id="arsenal-search" class="ball-search-input"
+                                   placeholder="Search database…" autocomplete="off">
+                            <button class="clear-btn" id="arsenal-search-clear" title="Clear">&times;</button>
+                            <div class="ball-dropdown" id="arsenal-dropdown"></div>
+                        </div>
+                    </div>
+
+                    <div class="arsenal-weight-area">
+                        <div class="fp-label">Weight</div>
+                        <select id="arsenal-weight" class="fp-select">
+                            <option value="16">16 lb</option>
+                            <option value="15" selected>15 lb</option>
+                            <option value="14">14 lb</option>
+                            <option value="13">13 lb</option>
+                            <option value="12">12 lb</option>
+                        </select>
+                    </div>
+
+                    <div class="arsenal-add-btn-area">
+                        <button id="arsenal-add-btn" class="arsenal-add-btn" disabled>
+                            Add to Arsenal
+                        </button>
+                    </div>
+
+                </div>
+                <p id="arsenal-add-error" class="arsenal-add-error" style="display:none"></p>
+            </section>
+
+            <!-- My Arsenal list -->
+            <section class="arsenal-list-section">
+                <h2 class="arsenal-section-heading">
+                    My Arsenal <span id="arsenal-count" class="ball-count"></span>
+                </h2>
+                <div id="arsenal-list">
+                    <!-- Ball cards rendered by arsenal.js -->
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Footer: copyright and small print (fixed at bottom) -->
+    <footer>
+        <p>&copy; ECE 50874 Bowling Ball Grid. For Educational Purposes - not a marketed product.</p>
+    </footer>
+    <script src="theme.js"></script>
+    <script src="arsenal.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

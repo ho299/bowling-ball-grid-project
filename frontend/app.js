@@ -1,77 +1,149 @@
+// Canvas and drawing for plotting the scatter/grid
 const gridCanvas = document.getElementById('gridCanvas');
 const ctx = gridCanvas.getContext('2d');
 
+// selectors for which numeric fields map to axes
 const xAxisSelect = document.getElementById('x-axis');
 const yAxisSelect = document.getElementById('y-axis');
-const updateButton = document.getElementById('Update Grid');
+const xLabelEl = document.getElementById('x-axis-label');
+const yLabelEl = document.getElementById('y-axis-label');
 
-let bowlingBalls = [];
-let numericFields = [];
+// Container where the table of plotted objects will be inserted
+const dataTableDiv = document.getElementById('data-table');
+
+// Dark mode toggle button
+const themeToggle = document.getElementById('theme-toggle');
+const logo = document.getElementById('logo');
+
+// Weight selector — resolved after FilterPanel.build() creates the element
+let weightSelect = null;
+
+// Application state
+let bowlingBalls = [];       // array of objects (each ball with properties)
+let numericFields = [];      // axis field value-keys, derived from AXIS_FIELDS
+let selectedIndex = null;    // index of the currently selected ball (or null)
+let filterPanel  = null;     // FilterPanel instance, built after data loads
+
+// Fixed axis field definitions: value = option key, label = display name,
+// accessor(ball, selectedWeight) returns the numeric value to plot.
+const AXIS_FIELDS = [
+    { value: 'rg',               label: 'Radius of Gyration',  accessor: (b, w) => getSpec(b, w, 'rg') },
+    { value: 'diff',             label: 'Differential',         accessor: (b, w) => getSpec(b, w, 'diff') },
+    { value: 'mb_diff',          label: 'MB Differential',      accessor: (b, w) => getSpec(b, w, 'mb_diff') },
+{ value: 'release_year',     label: 'Release Year',         accessor: (b) => b.release_date ? new Date(b.release_date).getFullYear() : null },
+    { value: 'hook_potential',   label: 'Hook Potential',       accessor: (b) => b.hook_potential },
+    { value: 'early_v_late',     label: 'Early vs. Late',       accessor: (b) => b.early_v_late },
+    { value: 'smooth_v_angular', label: 'Smooth vs. Angular',   accessor: (b) => b.smooth_v_angular },
+];
+
+// Return a spec field value for a given ball and weight, or null if not available.
+function getSpec(ball, weight, field) {
+    if (!Array.isArray(ball.specs)) return null;
+    const spec = ball.specs.find(s => s.weight === weight);
+    return spec ? spec[field] : null;
+}
 
 //fetch data from backend
 async function fetchData() {
-    //todo
-    bowlingBalls = [
-        {
-            name: "Ball A"  ,
-            weight: 12,
-            diameter: 7,
-            price: 150
-        },
-        {
-            name: "Ball C"  ,
-            weight: 10,
-            diameter: 8.5,
-            price: 300
-        },
-        {
-            name: "Ball C"  ,
-            weight: 11,
-            diameter: 9,
-            price: 75
-        }
-    ]
+    try {
+        const response = await fetch(location.origin+'/api/balls');
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        bowlingBalls = await response.json();
+    } catch (error) {
+        console.error('fetchData: failed to load from API, using placeholder data.', error);
+        bowlingBalls = [
+            {
+                name: "Ball A",
+                weight: 12,
+                coverstock: 7,
+                core_design: 150,
+                radius_of_gyration: 2.5,
+                price: 200,
+                differential: 0.035,
+                optimal_lane_condition: 8
+            },
+            {
+                name: "Ball B",
+                weight: 15,
+                coverstock: 10,
+                core_design: 100,
+                radius_of_gyration: 3.5,
+                price: 500,
+                differential: 0.045,
+                optimal_lane_condition: 10
+            },
+            {
+                name: "Ball C",
+                weight: 10,
+                coverstock: 5,
+                core_design: 80,
+                radius_of_gyration: 1.5,
+                price: 100,
+                differential: 0.025,
+                optimal_lane_condition: 6
+            }
+        ];
+    }
 
     detectNumericFields();
     populateAxisOptions();
+
+    filterPanel = new FilterPanel(document.getElementById('filter-container'), {
+        onChange: () => { drawGrid(); renderTable(); },
+        weightConfig: {
+            id: 'weight-select',
+            options: [
+                { value: '16', label: '16 lb' },
+                { value: '15', label: '15 lb' },
+                { value: '14', label: '14 lb' },
+                { value: '13', label: '13 lb' },
+                { value: '12', label: '12 lb' },
+            ],
+            selected: '15',
+        },
+    });
+    filterPanel.build(bowlingBalls);
+
+    // Resolve the weight select now that FilterPanel has rendered it
+    weightSelect = document.getElementById('weight-select');
+    weightSelect.addEventListener('change', () => { drawGrid(); renderTable(); });
+
     drawGrid();
+    console.log('fetchData: loaded', bowlingBalls.length, 'balls');
+    console.log('fetchData: numericFields=', numericFields);
+    renderTable();
 }
 
-//numeric fields detection
+// Set numericFields from the fixed AXIS_FIELDS list.
 function detectNumericFields() {
-    if (bowlingBalls.length === 0) return;
-
-    numericFields = Object.keys(bowlingBalls[0]).filter(
-        key => typeof bowlingBalls[0][key] === 'number'
-    );
+    numericFields = AXIS_FIELDS.map(f => f.value);
 }
 
-//populate dropdowns
+// Populate the axis <select> elements from AXIS_FIELDS.
 function populateAxisOptions() {
     xAxisSelect.innerHTML = '';
     yAxisSelect.innerHTML = '';
 
-    numericFields.forEach(field => {
-        //x axis data options
-        const optionX = document.createElement('option');
-        optionX.value = field;
-        optionX.textContent = field;
-        xAxisSelect.appendChild(optionX);
+    AXIS_FIELDS.forEach(field => {
+        const optX = document.createElement('option');
+        optX.value = field.value;
+        optX.textContent = field.label;
+        xAxisSelect.appendChild(optX);
 
-        //y axis data options
-        const optionY = document.createElement('option');
-        optionY.value = field;
-        optionY.textContent = field;
-        yAxisSelect.appendChild(optionY);
+        const optY = document.createElement('option');
+        optY.value = field.value;
+        optY.textContent = field.label;
+        yAxisSelect.appendChild(optY);
     });
 
-    if (numericFields.length >= 2) {
-        xAxisSelect.value = numericFields[0];
-        yAxisSelect.value = numericFields[1];
-    }
+    xAxisSelect.value = AXIS_FIELDS[0].value;   // Radius of Gyration
+    yAxisSelect.value = AXIS_FIELDS[1].value;   // Differential
+
+    updateHtmlAxisLabels();
 }
 
-//draw grid and bowling balls
+// Clear the canvas and redraw grid lines and plotted points for the
+// currently selected X/Y fields.
 function drawGrid() {
     ctx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
     
@@ -79,10 +151,11 @@ function drawGrid() {
     const yField = yAxisSelect.value;
 
     drawGridLines();
+    updateHtmlAxisLabels();
     plotBowlingBalls(xField, yField);
 }
 
-//draw grid lines
+// Draw light grid lines and the main X/Y axes on the canvas
 function drawGridLines() {
     const gridSize = 10;
     const step = gridCanvas.width / gridSize;
@@ -114,35 +187,242 @@ function drawGridLines() {
     ctx.stroke();
 }
 
-//plot bowling balls
+// Plot each bowling ball as a point on the canvas. Points are scaled to the
+// canvas bounds with padding. Each ball's computed canvas coordinates are
+// stored on the object as `_x` and `_y` for hit-testing and interaction.
 function plotBowlingBalls(xField, yField) {
     const padding = 40;
+    const xDef = AXIS_FIELDS.find(f => f.value === xField);
+    const yDef = AXIS_FIELDS.find(f => f.value === yField);
+    const selectedWeight = parseInt(weightSelect.value, 10);
 
-    const xValues = bowlingBalls.map(ball => ball[xField]);
-    const yValues = bowlingBalls.map(ball => ball[yField]);
+    // Clear all stored positions first
+    bowlingBalls.forEach(b => { b._x = null; b._y = null; });
 
-    const xMin = Math.min(...xValues);
-    const xMax = Math.max(...xValues);
-    const yMin = Math.min(...yValues);
-    const yMax = Math.max(...yValues);
+    // Only plot balls that pass the active filters
+    const visible = filterPanel
+        ? bowlingBalls.filter(b => filterPanel.passes(b, selectedWeight))
+        : bowlingBalls;
 
-    bowlingBalls.forEach(ball => {
-        const x = 
-            padding + ((ball[xField] - xMin) / (xMax - xMin)) * 
-            (gridCanvas.width - 2 * padding);
-        const y = 
-            gridCanvas.height - padding - ((ball[yField] - yMin) / (yMax - yMin)) * 
-            (gridCanvas.height - 2 * padding);
+    const allX = visible.map(b => xDef ? xDef.accessor(b, selectedWeight) : null);
+    const allY = visible.map(b => yDef ? yDef.accessor(b, selectedWeight) : null);
+    const validX = allX.filter(v => v != null);
+    const validY = allY.filter(v => v != null);
+    if (validX.length === 0 || validY.length === 0) return;
+
+    const xMin = Math.min(...validX), xMax = Math.max(...validX);
+    const yMin = Math.min(...validY), yMax = Math.max(...validY);
+
+    visible.forEach((ball, i) => {
+        const xVal = allX[i];
+        const yVal = allY[i];
+        const idx  = bowlingBalls.indexOf(ball);
+
+        if (xVal == null || yVal == null) return;
+
+        const xRatio = (xMax === xMin) ? 0.5 : (xVal - xMin) / (xMax - xMin);
+        const yRatio = (yMax === yMin) ? 0.5 : (yVal - yMin) / (yMax - yMin);
+
+        const x = padding + xRatio * (gridCanvas.width - 2 * padding);
+        const y = gridCanvas.height - padding - yRatio * (gridCanvas.height - 2 * padding);
+
+        ball._x = x;
+        ball._y = y;
 
         ctx.beginPath();
-        ctx.arc(x, y, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = '#0077cc';
+        ctx.arc(x, y, (selectedIndex === idx) ? 9 : 6, 0, 2 * Math.PI);
+        ctx.fillStyle = (selectedIndex === idx) ? '#ff4444' : '#0077cc';
         ctx.fill();
+        if (selectedIndex === idx) {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#cc0000';
+            ctx.stroke();
+            ctx.lineWidth = 1;
+        }
     });
 }
 
-//event listener for plot button
-updateButton.addEventListener('click', drawGrid);
+// Render an HTML table of `bowlingBalls` under the canvas. Clicking a row
+// will select the corresponding ball and highlight its point on the canvas.
+function renderTable() {
+    console.log('renderTable: dataTableDiv=', dataTableDiv);
+    dataTableDiv.innerHTML = '';
+    if (!bowlingBalls || bowlingBalls.length === 0) return;
 
-//initial data fetch
+    const selectedWeight = parseInt(weightSelect.value, 10);
+
+    // Apply active filters; preserve original indices for selection
+    const filteredIndices = filterPanel
+        ? bowlingBalls.map((_, i) => i).filter(i => filterPanel.passes(bowlingBalls[i], selectedWeight))
+        : bowlingBalls.map((_, i) => i);
+
+    // Update "Showing X of Y" counter
+    const countEl = document.getElementById('ball-count');
+    if (countEl) {
+        countEl.textContent = filteredIndices.length < bowlingBalls.length
+            ? `(${filteredIndices.length} of ${bowlingBalls.length})`
+            : `(${bowlingBalls.length})`;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const nameTh = document.createElement('th');
+    nameTh.textContent = 'Name';
+    headerRow.appendChild(nameTh);
+    AXIS_FIELDS.forEach(field => {
+        const th = document.createElement('th');
+        th.textContent = field.label;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    filteredIndices.forEach(idx => {
+        const ball = bowlingBalls[idx];
+        const tr = document.createElement('tr');
+        tr.dataset.index = idx;
+        if (selectedIndex === idx) tr.classList.add('selected-row');
+        const nameTd = document.createElement('td');
+        nameTd.textContent = ball.name || '';
+        tr.appendChild(nameTd);
+        AXIS_FIELDS.forEach(field => {
+            const td = document.createElement('td');
+            const val = field.accessor(ball, selectedWeight);
+            td.textContent = (val !== null && val !== undefined) ? val : '—';
+            tr.appendChild(td);
+        });
+        tr.addEventListener('click', () => selectBall(idx));
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    dataTableDiv.appendChild(table);
+
+    // Scroll the selected row into view without moving it
+    if (selectedIndex !== null) {
+        const selectedRow = tbody.querySelector(`tr[data-index="${selectedIndex}"]`);
+        if (selectedRow) selectedRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    console.log('renderTable: rendered', filteredIndices.length, 'of', bowlingBalls.length, 'rows');
+}
+
+// Mark a ball as selected by index, refresh the table row styles and redraw
+// the canvas so the selected point appears highlighted.
+function selectBall(idx) {
+    selectedIndex = idx;
+    drawGrid();
+    renderTable();
+}
+
+/* Sends the display labels of the selected axes to the HTML axis label elements */
+function updateHtmlAxisLabels() {
+    const xDef = AXIS_FIELDS.find(f => f.value === xAxisSelect.value);
+    const yDef = AXIS_FIELDS.find(f => f.value === yAxisSelect.value);
+    xLabelEl.textContent = xDef ? xDef.label : xAxisSelect.value;
+    yLabelEl.textContent = yDef ? yDef.label : yAxisSelect.value;
+}
+
+// allow clicking canvas to select nearest ball
+// Canvas click handler: find the nearest plotted point and select it if
+// the click is close enough.
+gridCanvas.addEventListener('click', (e) => {
+    const rect = gridCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    let nearest = null;
+    let nearestDist = Infinity;
+    bowlingBalls.forEach((ball, idx) => {
+        if (ball._x == null || ball._y == null) return;
+        const dx = ball._x - x;
+        const dy = ball._y - y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < nearestDist) { nearestDist = d; nearest = idx; }
+    });
+    if (nearest !== null && nearestDist <= 10) {
+        selectBall(nearest);
+    }
+});
+
+// Dropdown event listeners: redraw automatically when axis selection changes
+// Also prevent both axes from being set to the same field
+/*xAxisSelect.addEventListener('change', () => {
+    // If X-axis is now the same as Y-axis, auto-switch Y-axis to another field
+    if (xAxisSelect.value === yAxisSelect.value) {
+        const alternative = numericFields.find(f => f !== xAxisSelect.value);
+        if (alternative) {
+            yAxisSelect.value = alternative;
+        }
+    }
+    drawGrid();
+    renderTable();
+});
+
+yAxisSelect.addEventListener('change', () => {
+    // If Y-axis is now the same as X-axis, auto-switch X-axis to another field
+    if (yAxisSelect.value === xAxisSelect.value) {
+        const alternative = numericFields.find(f => f !== yAxisSelect.value);
+        if (alternative) {
+            xAxisSelect.value = alternative;
+        }
+    }
+    drawGrid();
+    renderTable();
+});*/
+
+xAxisSelect.addEventListener('change', () => {
+    if (xAxisSelect.value === yAxisSelect.value) {
+        const alt = AXIS_FIELDS.find(f => f.value !== xAxisSelect.value);
+        if (alt) yAxisSelect.value = alt.value;
+    }
+    updateHtmlAxisLabels();
+    drawGrid();
+    renderTable();
+});
+
+yAxisSelect.addEventListener('change', () => {
+    if (yAxisSelect.value === xAxisSelect.value) {
+        const alt = AXIS_FIELDS.find(f => f.value !== yAxisSelect.value);
+        if (alt) xAxisSelect.value = alt.value;
+    }
+    updateHtmlAxisLabels();
+    drawGrid();
+    renderTable();
+});
+
+// Weight listener is registered in fetchData() after FilterPanel.build() creates the element.
+
+// Dark mode toggle handler: toggle class on body and save preference to localStorage
+themeToggle.addEventListener('click', () => {
+    // update localStorage with the new theme preference
+    document.body.classList.toggle('dark-mode');
+
+    //update logo image and persist preference
+    if (document.body.classList.contains('dark-mode')) {
+        themeToggle.textContent = 'Light Mode';
+        logo.src = 'bowl_iq_darkmode.png';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        themeToggle.textContent = 'Dark Mode';
+        logo.src = 'bowl_iq_lightmode.png';
+        localStorage.setItem('theme', 'light');
+    }
+});
+
+// Initialize dark mode from localStorage preference
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.textContent = 'Light Mode';
+        logo.src = 'bowl_iq_darkmode.png';
+    } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.textContent = 'Dark Mode';
+        logo.src = 'bowl_iq_lightmode.png';
+    }
+}
+
+// Initial load: set theme preference, then fetch data, detect fields, populate controls and draw
+initializeTheme();
 fetchData();
