@@ -4,7 +4,7 @@
 
 // ── Placeholder API calls ─────────────────────────────────────────────────────
 
-async function apiLogin(email, password) {
+async function apiLogin(email, _password) {
     // TODO: replace with real login endpoint
     // return await fetch('/api/auth/login', {
     //     method: 'POST',
@@ -16,7 +16,7 @@ async function apiLogin(email, password) {
     );
 }
 
-async function apiCreateAccount(username, email, password) {
+async function apiCreateAccount(username, email, _password) {
     // TODO: replace with real register endpoint
     // return await fetch('/api/auth/register', {
     //     method: 'POST',
@@ -131,6 +131,12 @@ function openModal() {
 }
 
 function closeModal() {
+    // Move focus out of the modal before marking it aria-hidden, otherwise
+    // browsers flag a violation when a focused descendant becomes hidden from
+    // assistive technology.
+    const loginBtn = getLoginBtn();
+    if (loginBtn) loginBtn.focus();
+
     const overlay = document.getElementById('auth-modal-overlay');
     overlay.classList.remove('open');
     overlay.setAttribute('aria-hidden', 'true');
