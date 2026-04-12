@@ -40,17 +40,22 @@ const defaultBalls = [
   ];
 
 //page routing below:
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('Hello World!');
 });
 
-app.get('/homepage', (req, res) => {
+app.get('/homepage', (_req, res) => {
   res.redirect('/homepage.html')
 });
 
-app.use(express.static(path.join(__dirname,"")));
+// Serve HTML/CSS from pages/ as the root (e.g. /homepage.html)
+app.use(express.static(path.join(__dirname, '..', 'pages')));
+// Serve JS files under /utils/ (HTML references them as ../utils/*)
+app.use('/utils', express.static(__dirname));
+// Serve images under /images/ (HTML references them as ../images/*)
+app.use('/images', express.static(path.join(__dirname, '..', 'images')));
 
-app.get('/api/balls', async (req, res) => {
+app.get('/api/balls', async (_req, res) => {
   const resFromApi = await fetch(APIROUTE+'/api/balls');
   var allBalls = defaultBalls;
   if (!resFromApi.ok) {

@@ -400,11 +400,11 @@ themeToggle.addEventListener('click', () => {
     //update logo image and persist preference
     if (document.body.classList.contains('dark-mode')) {
         themeToggle.textContent = 'Light Mode';
-        logo.src = 'bowl_iq_darkmode.png';
+        logo.src = '../images/bowl_iq_darkmode.png';
         localStorage.setItem('theme', 'dark');
     } else {
         themeToggle.textContent = 'Dark Mode';
-        logo.src = 'bowl_iq_lightmode.png';
+        logo.src = '../images/bowl_iq_lightmode.png';
         localStorage.setItem('theme', 'light');
     }
 });
@@ -415,11 +415,11 @@ function initializeTheme() {
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
         themeToggle.textContent = 'Light Mode';
-        logo.src = 'bowl_iq_darkmode.png';
+        logo.src = '../images/bowl_iq_darkmode.png';
     } else {
         document.body.classList.remove('dark-mode');
         themeToggle.textContent = 'Dark Mode';
-        logo.src = 'bowl_iq_lightmode.png';
+        logo.src = '../images/bowl_iq_lightmode.png';
     }
 }
 
