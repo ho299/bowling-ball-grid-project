@@ -54,10 +54,10 @@ router.post('/', async (req, res) => {
         
         var finishNumber = algorithm.finishNametoNumber(coverstockFinish, coverstockName);
         
-        // bowlingBall  = {rg:specs.rg,diff:specs.diff, mb_diff:spec.mb_diff, factory_finish:finishNumber};
-        // var hookPot = algorithm.hookPotential(bowlingBall);
-        // var eVL = algorithm.earlyVLate(bowlingBall);
-        // var sVA = algorithm.smoothVAngular(bowlingBall);
+        bowlingBall  = {rg:specs.rg,diff:specs.diff, mb_diff:spec.mb_diff, factory_finish:finishNumber};
+        var hookPot = algorithm.hookPotential(bowlingBall);
+        var eVL = algorithm.earlyVLate(bowlingBall);
+        var sVA = algorithm.smoothVAngular(bowlingBall);
 
         const newBall = await ballQueries.createBall({
             name, image,brand, release_date, discontinued,
@@ -82,9 +82,9 @@ router.post('/', async (req, res) => {
                     rg: spec.rg,
                     diff: spec.diff,
                     mb_diff: spec.mb_diff,
-                    // early_v_late: algorithm.earlyVLate(bowlingBall),
-                    // smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
-                    // hook_potential: algorithm.hookPotential(bowlingBall)
+                    early_v_late: algorithm.earlyVLate(bowlingBall),
+                    smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
+                    hook_potential: algorithm.hookPotential(bowlingBall)
                 });
             })
         ) : [];
