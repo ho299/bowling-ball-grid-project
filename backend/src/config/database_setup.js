@@ -72,7 +72,7 @@ async function seed() {
 
             for (const [key, weight] of Object.entries(weightMap)) {
                 const spec = parseSpec(row[key]);
-                if (spec) {
+                if (spec && spec.rg && spec.diff && spec.mb_diff) {
                     const finishNumber = algorithm.finishNametoNumber(row.factory_finish, row.coverstock);
                     const bowlingBall = {
                         rg:             spec.rg,
@@ -80,12 +80,15 @@ async function seed() {
                         mb_diff:        spec.mb_diff,
                         factory_finish: finishNumber
                     };
+                    const hookPotential = algorithm.hookPotential(bowlingBall);
+                    const earlyVLate = algorithm.earlyVLate(bowlingBall);
+                    const smoothVAngular = algorithm.smoothVAngular(bowlingBall);
                     parsedSpecs.push({
                         weight,
                         ...spec,
-                        hook_potential:   algorithm.hookPotential(bowlingBall),
-                        early_v_late:     algorithm.earlyVLate(bowlingBall),
-                        smooth_v_angular: algorithm.smoothVAngular(bowlingBall)
+                        hook_potential:   hookPotential,
+                        early_v_late:     earlyVLate,
+                        smooth_v_angular: smoothVAngular
                     });
                 }
             }

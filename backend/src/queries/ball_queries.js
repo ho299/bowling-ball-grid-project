@@ -7,7 +7,7 @@ const getAllBalls = async () => {
               cs.name AS coverstock_name, cs.type AS coverstock_type,
               COALESCE(
                 json_agg(
-                  json_build_object('weight', s.weight, 'rg', s.rg, 'diff', s.diff, 'mb_diff', s.mb_diff)
+                  json_build_object('weight', s.weight, 'rg', s.rg, 'diff', s.diff, 'mb_diff', s.mb_diff, 'early_v_late', s.early_v_late, 'smooth_v_angular', s.smooth_v_angular, 'hook_potential', s.hook_potential)
                   ORDER BY s.weight
                 ) FILTER (WHERE s.ball_id IS NOT NULL),
                 '[]'
