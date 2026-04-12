@@ -8,9 +8,12 @@ function parseDate(dateStr) {
     if (!dateStr || dateStr.trim() === '') return null;
     const [mon, yr] = dateStr.split('-');
     if (!mon || !yr) return null;
-    return `20${yr}-${new Date(`${mon} 1 2000`).getMonth() + 1}-01`;
+    
+    const year = parseInt(yr);
+    const fullYear = year > 50 ? 1900 + year : 2000 + year;
+    
+    return `${fullYear}-${new Date(`${mon} 1 2000`).getMonth() + 1}-01`;
 }
-
 function parseNameFromUrl(url) {
     if (!url) return null;
     const segment = url.split('/').pop();
