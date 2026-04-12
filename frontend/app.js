@@ -31,9 +31,9 @@ const AXIS_FIELDS = [
     { value: 'diff',             label: 'Differential',         accessor: (b, w) => getSpec(b, w, 'diff') },
     { value: 'mb_diff',          label: 'MB Differential',      accessor: (b, w) => getSpec(b, w, 'mb_diff') },
 { value: 'release_year',     label: 'Release Year',         accessor: (b) => b.release_date ? new Date(b.release_date).getFullYear() : null },
-    { value: 'hook_potential',   label: 'Hook Potential',       accessor: (b) => b.hook_potential },
-    { value: 'early_v_late',     label: 'Early vs. Late',       accessor: (b) => b.early_v_late },
-    { value: 'smooth_v_angular', label: 'Smooth vs. Angular',   accessor: (b) => b.smooth_v_angular },
+    { value: 'hook_potential',   label: 'Hook Potential',       accessor: (b, w) => getSpec(b, w, 'hook_potential') },
+    { value: 'early_v_late',     label: 'Early vs. Late',       accessor: (b, w) => getSpec(b, w, 'early_v_late') },
+    { value: 'smooth_v_angular', label: 'Smooth vs. Angular',   accessor: (b, w) => getSpec(b, w, 'smooth_v_angular') },
 ];
 
 // Return a spec field value for a given ball and weight, or null if not available.
