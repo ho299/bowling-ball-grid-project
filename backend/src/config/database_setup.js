@@ -4,6 +4,23 @@ const { parse } = require('csv-parse/sync');
 const algorithm = require('../../algorithms/bowlingBallScoreAlgos');
 const pool = require('./db_credentials');
 
+function parseDate(dateStr) {
+    if (!dateStr || dateStr.trim() === '') return null;
+    const [mon, yr] = dateStr.split('-');
+    if (!mon || !yr) return null;
+    return `20${yr}-${new Date(`${mon} 1 2000`).getMonth() + 1}-01`;
+}
+
+function parseNameFromUrl(url) {
+    if (!url) return null;
+    const segment = url.split('/').pop();
+    return segment
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+
+
 function parseSpec(specString) {
     if (!specString || specString.trim() === '' || specString.trim() === 'NULL') return null;  // ← add NULL check
     try {
