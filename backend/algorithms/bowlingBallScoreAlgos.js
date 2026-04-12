@@ -45,7 +45,7 @@ function hookPotential(bowlingBall) {
 /**
  * Calculates how fast a ball picks up for a given bowling ball on a scale of 0 to 100 where 0 is ultra early and 100 is ultra late
  * @param {{rg:number, diff:number, mb_diff:number, factory_finish:number}} bowlingBall - Contents of a bowling ball
- * @returns {number} The calculated hook potential value
+ * @returns {number} The calculated length
  */
 function earlyVLate(bowlingBall) {
     //lower rg = earlier
@@ -53,24 +53,23 @@ function earlyVLate(bowlingBall) {
     //higher mass diff = earlier
     //higher diff = tiny bit earlier
 
-    var rgWeight = 55
-    var surfaceWeight = 25
-    var mbDiffWeight = 15
-    var diffWeight = 5
+    var rg = bowlingBall.rg;
+    var diff = bowlingBall.diff;
+    var mb_diff = bowlingBall.mb_diff;
+    var finish = bowlingBall.factory_finish;
 
     if(bowlingBall.factory_finish===90000){
         return 0;
     }
 
-
-    var value = rgWeight*(bowlingBall.rg - minRG)/(maxRG-minRG) + surfaceWeight * (bowlingBall.factory_finish/9000)**.66 + mbDiffWeight*(maxMBDiff-bowlingBall.mb_diff)/(maxMBDiff-minMBDiff) + diffWeight*(maxDiff-bowlingBall.diff)/(maxDiff-minDiff)
+    var value = -6.47374266160808*rg*(rg - 2.6206777)*(40.24794*rg - 102.008559443964) + 3.8247962*diff/(diff - 0.008874497) + mb_diff/(23.5564009150368*mb_diff - 0.437239903099248) + 0.0016090363*finish - (62666.91*mb_diff**2/(sin(605.0254*mb_diff) + 1.977454) - 3.2504096)*sin(2.1269627*sin(3.469686*finish)) + 7.372996*sin(4538.579*mb_diff*(mb_diff - 0.007848568)*(sin(exp(rg)) + 0.28085837)) + 62.4810893192692 + 0.082332864/(rg - 2.6865366) + sin(17.5679517834212*diff - 0.6231852)/(0.07006618 - sin(0.16966921*finish)) - 20341.42/finish - 0.201301930851112/diff
     return value;
 }
 
 /**
  * Calculates how angular a given bowling ball is on a scale of 0 to 100 where 0 is ultra smooth and 100 is ultra angular
  * @param {{rg:number, diff:number, mb_diff:number, factory_finish:number}} bowlingBall - Contents of a bowling ball
- * @returns {number} The calculated hook potential value
+ * @returns {number} The calculated backend
  */
 function smoothVAngular(bowlingBall) {
     //higher rg = smoother
@@ -78,16 +77,16 @@ function smoothVAngular(bowlingBall) {
     //lower mass diff = smoother
     //lower surface number = smoother
 
-    var rgWeight = 55
-    var diffWeight = 25
-    var mbDiffWeight = 15
-    var surfaceWeight = 5
+    var rg = bowlingBall.rg;
+    var diff = bowlingBall.diff;
+    var mb_diff = bowlingBall.mb_diff;
+    var finish = bowlingBall.factory_finish;
 
     if(bowlingBall.factory_finish===90000){
         return 0;
     }
 
-    var value = rgWeight*(maxRG - bowlingBall.rg)/(maxRG-minRG) + surfaceWeight * (bowlingBall.factory_finish/9000)**.66 + mbDiffWeight*(bowlingBall.mb_diff-minMBDiff)/(maxMBDiff-minMBDiff) + diffWeight*(bowlingBall.diff-minDiff)/(maxDiff-minDiff)
+    var value = 38.864967*rg - 120.41707*diff + mb_diff**2*finish/(sin(2*finish) - 0.30317035) - 26727.46*mb_diff*(0.6001752 - sin(rg))*(rg - 2.8211472)*sin(136.74153*mb_diff - 1.1881695) - 53.6438007641345*mb_diff*(478.58905056212*mb_diff - 8.92158189187496) - mb_diff - 3.84479141255288 - 733.2708/(finish - 2355.4263) + 0.002088377/(mb_diff - 0.018642792) + 0.893783/(37.864967*rg - 99.208786) + 7.7535615*(2.7794487*finish - 4235.434)/finish + 8319183.0*sin(1.5752895 + 0.049962416/diff)/finish**2 + (-1.1900324 + 0.008265728/diff)/diff
     return value;
 }
 

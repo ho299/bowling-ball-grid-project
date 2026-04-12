@@ -15,6 +15,7 @@ const init = async() => {
     const coreRoutes = require('./routes/core_routes');
     const coverstockRoutes = require('./routes/coverstock_routes');
     const specsRoutes = require('./routes/specs_routes');
+    const algoRoutes = require('./routes/algo_routes');
 
     app.get('/', (req, res) => {
     res.send('Hello World!');
@@ -24,6 +25,7 @@ const init = async() => {
     app.use('/api/cores', coreRoutes);
     app.use('/api/coverstocks', coverstockRoutes);
     app.use('/api/specs', specsRoutes);
+    app.use('/api/algo', algoRoutes);
 
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
