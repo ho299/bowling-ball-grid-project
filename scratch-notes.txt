@@ -1,3 +1,96 @@
+================================================================================
+API FETCH ROUTING — HOW BROWSER CALLS REACH THE DATABASE
+================================================================================
+
+OVERVIEW
+--------
+The architecture uses a same-origin proxy pattern (sometimes called a BFF —
+Backend For Frontend). The browser never calls the backend API directly in
+production. Instead:
+
+  Browser JS → frontend Express server (port 80) → backend Express API (port 3000) → PostgreSQL
+
+This matters because:
+1. Browsers block cross-origin fetch calls unless the server sets CORS headers.
+   Routing through the frontend server makes all API calls same-origin from the
+   browser's perspective, so no CORS issue arises regardless of environment.
+2. In containers, the backend is not exposed to the public internet at all —
+   only the frontend container is. The frontend server communicates with the
+   backend over Docker's internal network using the container hostname.
+
+--------------------------------------------------------------------------------
+STEP-BY-STEP FLOW
+--------------------------------------------------------------------------------
+
+  [1] Browser JS (arsenal.js / replacement.js) calls:
+        fetch(location.origin + '/api/balls')
+      location.origin resolves to wherever the page was served from
+      (e.g. http://localhost in local dev, or the public domain in production).
+      The request goes to the SAME server that served the HTML.
+
+  [2] frontendStartup.js receives GET /api/balls.
+      It determines WHERE to forward the request based on the env variable:
+
+        const APIROUTE = process.env.dev == "local"
+          ? "http://localhost:3000"     // local dev: backend on same machine
+          : "http://backend:3000";      // containers: Docker internal DNS
+
+      It then makes a SERVER-SIDE fetch to APIROUTE + '/api/balls'.
+      If that fetch fails, it falls back to returning hardcoded placeholder
+      ball data (Ball A / Ball B / Ball C) so the page doesn't break.
+
+  [3] backend/src/app.js receives the request on port 3000.
+      It routes /api/balls to ball_routes.js, which calls ballQueries.getAllBalls()
+      and queries the PostgreSQL database.
+
+  [4] The JSON response travels back:
+        PostgreSQL → backend → frontendStartup.js → browser
+
+--------------------------------------------------------------------------------
+CONTAINER DEPLOYMENT DETAIL
+--------------------------------------------------------------------------------
+
+In the containerized deployment there are (at minimum) three containers:
+  - frontend  : runs frontendStartup.js via `npm start`, exposes port 80
+  - backend   : runs backend/src/app.js via `npm start`, exposes port 3000
+                (internally only — not mapped to the host)
+  - db        : runs PostgreSQL, only reachable by the backend container
+
+Docker Compose assigns each service its service name as its internal DNS
+hostname. So the backend container is reachable at "http://backend:3000" from
+within the Docker network. This is exactly what frontendStartup.js uses when
+process.env.dev is NOT set to "local":
+
+  const APIROUTE = "http://backend:3000";   // resolved by Docker internal DNS
+
+The browser never sees port 3000. It only ever talks to port 80 (the frontend
+server). The frontend server acts as a reverse proxy for API calls.
+
+The database hostname ("db") and credentials are passed to the backend via
+environment variables / .env file (DB_HOST=db in container context,
+DB_HOST=localhost in local dev).
+
+--------------------------------------------------------------------------------
+INCONSISTENCY TO BE AWARE OF (as of 30 MAR 2026)
+--------------------------------------------------------------------------------
+
+app.js (homepage) and compare.js hardcode the API URL:
+  fetch('http://localhost:3000/api/balls')
+
+This bypasses frontendStartup.js entirely and calls the backend directly.
+- In LOCAL dev: works fine (backend is on localhost:3000).
+- In CONTAINERS: FAILS — the browser is not on the same machine as the backend,
+  so localhost:3000 is unreachable. These pages fall back to placeholder data
+  in a deployed environment.
+
+arsenal.js and replacement.js use the correct pattern:
+  fetch(location.origin + '/api/balls')
+
+When app.js and compare.js are updated to use location.origin, the proxy
+pattern will work consistently across all pages in both environments.
+
+================================================================================
+
 start local postgresql services:
 brew services start postgresql@16
 
