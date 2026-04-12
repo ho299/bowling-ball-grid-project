@@ -14,6 +14,7 @@ const ownedBallRoutes       = require('./routes/owned_ball_routes');
 const modificationRoutes    = require('./routes/modification_routes');
 const arsenalListRoutes     = require('./routes/arsenal_list_routes');
 const arsenalContentRoutes  = require('./routes/arsenal_content_routes');
+const algoRoutes            = require('./routes/algo_routes');
 
 app.use('/api/balls',           ballRoutes);
 app.use('/api/users',           userRoutes);
@@ -24,7 +25,7 @@ app.use('/api/owned-balls',     ownedBallRoutes);
 app.use('/api/modifications',   modificationRoutes);
 app.use('/api/arsenal-lists',   arsenalListRoutes);
 app.use('/api/arsenal-content', arsenalContentRoutes);
-
+app.use('/api/algo',            algoRoutes);
 // ── Health check ──────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.json({ message: 'Bowling API is running' });
