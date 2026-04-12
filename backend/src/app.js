@@ -1,38 +1,48 @@
 const express = require('express');
-const cors = require('cors');
-// const path = require('path');
-// require('dotenv').config({ path: path.resolve(__dirname, '../..', '.env') });
-
 const app = express();
-app.use(cors());
+
+// ── Middleware ─────────────────────────────────────────────────────
 app.use(express.json());
 
-// Serve frontend static files
-const init = async() => {
-// app.use(express.static(path.join(__dirname, '../..', 'frontend')));
+// ── Routes ────────────────────────────────────────────────────────
+const ballRoutes            = require('./routes/ball_routes');
+const userRoutes            = require('./routes/users_routes');
+const coreRoutes            = require('./routes/core_routes');
+const coverstockRoutes      = require('./routes/coverstock_routes');
+const specsRoutes           = require('./routes/specs_routes');
+const ownedBallRoutes       = require('./routes/owned_ball_routes');
+const modificationRoutes    = require('./routes/modification_routes');
+const arsenalListRoutes     = require('./routes/arsenal_list_routes');
+const arsenalContentRoutes  = require('./routes/arsenal_content_routes');
 
-    const ballRoutes = require('./routes/ball_routes');
-    const coreRoutes = require('./routes/core_routes');
-    const coverstockRoutes = require('./routes/coverstock_routes');
-    const specsRoutes = require('./routes/specs_routes');
-    const algoRoutes = require('./routes/algo_routes');
+app.use('/api/balls',           ballRoutes);
+app.use('/api/users',           userRoutes);
+app.use('/api/cores',           coreRoutes);
+app.use('/api/coverstocks',     coverstockRoutes);
+app.use('/api/specs',           specsRoutes);
+app.use('/api/owned-balls',     ownedBallRoutes);
+app.use('/api/modifications',   modificationRoutes);
+app.use('/api/arsenal-lists',   arsenalListRoutes);
+app.use('/api/arsenal-content', arsenalContentRoutes);
 
-    app.get('/', (req, res) => {
-    res.send('Hello World!');
-    });
+// ── Health check ──────────────────────────────────────────────────
+app.get('/', (req, res) => {
+    res.json({ message: 'Bowling API is running' });
+});
 
-    app.use('/api/balls', ballRoutes);
-    app.use('/api/cores', coreRoutes);
-    app.use('/api/coverstocks', coverstockRoutes);
-    app.use('/api/specs', specsRoutes);
-    app.use('/api/algo', algoRoutes);
+// ── 404 handler ───────────────────────────────────────────────────
+app.use((req, res) => {
+    res.status(404).json({ error: `Route ${req.method} ${req.path} not found` });
+});
 
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// ── Global error handler ──────────────────────────────────────────
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong' });
+});
 
-}
+// ── Start server ──────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-init();
-// console.log("Backend Loaded...")
-
-// module.exports = app;
+module.exports = app;

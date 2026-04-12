@@ -39,16 +39,16 @@ const getBallById = async (id) => {
 
 
 //POST - create ball information
-const createBall = async ({name,brand=null,image=null,release_date,discontinued,overseas,factory_finish,  early_v_late, smooth_v_angular, hook_potential ,core_id,coverstock_id}) => {
-  const query = `INSERT INTO ball (name, brand, image, release_date, discontinued, overseas, factory_finish, early_v_late, smooth_v_angular, hook_potential ,core_id, coverstock_id) 
-                  VALUES ($1, $2, $3,TO_DATE($4, 'Mon YYYY'), $5, $6, $7, $8, $9, $10, $11, $12) 
+const createBall = async ({name, brand=null, image=null, release_date, discontinued, overseas, factory_finish, core_id, coverstock_id}) => {
+  const query = `INSERT INTO ball (name, brand, image, release_date, discontinued, overseas, factory_finish, core_id, coverstock_id) 
+                  VALUES ($1, $2, $3, TO_DATE($4, 'Mon YYYY'), $5, $6, $7, $8, $9) 
                   RETURNING *`;
-  const result = await pool.query(query, [name, brand, image, release_date, discontinued, overseas, factory_finish,  early_v_late, smooth_v_angular, hook_potential ,core_id, coverstock_id]);
+  const result = await pool.query(query, [name, brand, image, release_date, discontinued, overseas, factory_finish, core_id, coverstock_id]);
   return result.rows[0];
 }
 
 //PUT - update ball information
-const updateBall = async (id, { name = null, brand = null, image = null, release_date = null, discontinued = null, overseas = null, factory_finish = null, early_v_late = null, smooth_v_angular = null, hook_potential = null , core_id = null, coverstock_id = null }) => {  const query = `UPDATE ball 
+const updateBall = async (id, { name = null, brand = null, image = null, release_date = null, discontinued = null, overseas = null, factory_finish = null , core_id = null, coverstock_id = null }) => {  const query = `UPDATE ball 
                   SET name = COALESCE($1, name), 
                     brand = COALESCE($2, brand), 
                     image = COALESCE($3, image), 
@@ -56,14 +56,11 @@ const updateBall = async (id, { name = null, brand = null, image = null, release
                     discontinued = COALESCE($5, discontinued), 
                     overseas = COALESCE($6, overseas),
                     factory_finish = COALESCE($7, factory_finish),
-                    early_v_late = COALESCE($8,early_v_late),
-                    smooth_v_angular = COALESCE($9,smooth_v_angular),
-                    hook_potential = COALESCE($10,hook_potential), 
-                    core_id = COALESCE($11, core_id), 
-                    coverstock_id = COALESCE($12, coverstock_id) 
-                  WHERE id = $13
+                    core_id = COALESCE($8, core_id), 
+                    coverstock_id = COALESCE($9, coverstock_id) 
+                  WHERE id = $10
                   RETURNING *`;
-  const result = await pool.query(query, [name, brand, image, release_date, discontinued, overseas, factory_finish,  early_v_late, smooth_v_angular, hook_potential ,core_id, coverstock_id, id]);
+  const result = await pool.query(query, [name, brand, image, release_date, discontinued, overseas, factory_finish, core_id, coverstock_id, id]);
   return result.rows[0];
 }
 

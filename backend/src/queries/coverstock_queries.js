@@ -1,7 +1,7 @@
 const pool = require('../config/db_credentials'); // calling the db
 
 //GET all the coverstocks
-const getAllCoverstock = async () => {
+const getAllCoverstocks = async () => {
   const query = 'SELECT * FROM coverstock ORDER BY id ASC';
   const result = await pool.query(query);
   return result.rows;
@@ -42,7 +42,7 @@ const deleteCoverstock = async (id) => {
 }
 
 module.exports = {
-    getAllCoverstock,
+    getAllCoverstocks,
     getCoverstockById,
     createCoverstock,
     updateCoverstock,
