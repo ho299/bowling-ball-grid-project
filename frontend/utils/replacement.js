@@ -1,50 +1,46 @@
-// Replacement page: find the closest replacement ball from arsenal or full database
+// Replacement page: find the closest replacement ball, or fill gaps in your arsenal.
+// Uses backend API:
+//   /api/algo/replacement?id=<ballId>          — best replacement for one specific ball
+//   /api/algo/gapFinder?ids=<json_array>        — best addition to complement an arsenal
 
 let allBalls = [];
 let selectedBall = null;
 let currentMethod = 'arsenal'; // 'arsenal' | 'database'
 
-// Metrics used for similarity scoring.
-// weight multiplier lets spec fields (rg, diff) count more than subjective ratings.
-const METRICS = [
-    { key: 'hook_potential',   accessor: (b, _w) => b.hook_potential,       w: 1   },
-    { key: 'early_v_late',     accessor: (b, _w) => b.early_v_late,          w: 1   },
-    { key: 'smooth_v_angular', accessor: (b, _w) => b.smooth_v_angular,      w: 1   },
-    { key: 'rg',               accessor: (b, wt) => getSpec(b, wt, 'rg'),    w: 1.5 },
-    { key: 'diff',             accessor: (b, wt) => getSpec(b, wt, 'diff'),  w: 1.5 },
-    { key: 'mb_diff',          accessor: (b, wt) => getSpec(b, wt, 'mb_diff'), w: 1 },
-];
-
-function getSpec(ball, weight, field) {
-    if (!Array.isArray(ball.specs)) return null;
-    const spec = ball.specs.find(s => s.weight === weight);
-    return spec ? spec[field] : null;
-}
+const ARSENAL_KEY = 'bowliq_arsenal';
+const IMAGE_BASE  = 'https://www.bowwwl.com';
 
 // ── Arsenal storage ───────────────────────────────────────────────────────────
-// Arsenal is stored in localStorage as a JSON array of ball names.
-// The Arsenal page (under construction) will write to this key.
-
-const ARSENAL_KEY = 'bowliq_arsenal';
 
 function getArsenalNames() {
     try {
         const data = JSON.parse(localStorage.getItem(ARSENAL_KEY) || '[]');
-        // Handle both legacy array-of-strings and current array-of-objects format
         return data.map(item => (typeof item === 'string' ? item : (item.name || '')));
     } catch { return []; }
 }
 
+// Returns the subset of allBalls whose names match the saved arsenal.
 function getArsenalBalls() {
     const names = new Set(getArsenalNames().map(n => n.toLowerCase()));
     return allBalls.filter(b => names.has((b.name || '').toLowerCase()));
+}
+
+// Returns the database IDs of the user's arsenal balls (needs allBalls to be loaded).
+function getArsenalBallIds() {
+    return getArsenalBalls().map(b => b.id).filter(id => id != null);
+}
+
+// Look up a ball's database id from the loaded allBalls list.
+function lookupBallId(ball) {
+    const found = allBalls.find(b => b.name === ball.name);
+    return found ? found.id : null;
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
 async function fetchBalls() {
     try {
-        const res = await fetch(location.origin+'/api/balls');
+        const res = await fetch(location.origin + '/api/balls');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         allBalls = await res.json();
     } catch (e) {
@@ -61,7 +57,6 @@ function setMethod(method) {
     document.getElementById('method-arsenal').classList.toggle('active', method === 'arsenal');
     document.getElementById('method-database').classList.toggle('active', method === 'database');
 
-    // Reset selection whenever the pool changes
     selectedBall = null;
     document.getElementById('rp-search').value = '';
     document.getElementById('rp-dropdown').style.display = 'none';
@@ -71,9 +66,18 @@ function setMethod(method) {
 }
 
 function refreshPickerState() {
-    const notice = document.getElementById('rp-arsenal-empty');
-    const showNotice = currentMethod === 'arsenal' && getArsenalBalls().length === 0;
-    notice.style.display = showNotice ? 'block' : 'none';
+    const notice  = document.getElementById('rp-arsenal-empty');
+    const gapArea = document.getElementById('rp-gap-area');
+    const arsenalBalls = getArsenalBalls();
+    const arsenalEmpty = currentMethod === 'arsenal' && arsenalBalls.length === 0;
+
+    notice.style.display  = arsenalEmpty ? 'block' : 'none';
+
+    // Gap finder button: only useful in arsenal mode when arsenal has balls
+    if (gapArea) {
+        gapArea.style.display =
+            currentMethod === 'arsenal' && arsenalBalls.length > 0 ? 'block' : 'none';
+    }
 }
 
 function getPool() {
@@ -98,14 +102,11 @@ function setupPicker() {
         showDropdown(dropdown, matches);
     });
 
-    input.addEventListener('focus', () => {
-        showDropdown(dropdown, getPool());
-    });
+    input.addEventListener('focus', () => showDropdown(dropdown, getPool()));
 
     document.addEventListener('click', e => {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target))
             dropdown.style.display = 'none';
-        }
     });
 
     clearBtn.addEventListener('click', () => {
@@ -137,110 +138,155 @@ function pickBall(ball) {
     selectedBall = ball;
     document.getElementById('rp-search').value = ball.name;
     document.getElementById('rp-dropdown').style.display = 'none';
-    renderResults();
+    renderReplacementResults();
 }
 
-// ── Similarity scoring ────────────────────────────────────────────────────────
+// ── API calls ─────────────────────────────────────────────────────────────────
 
-// Build min/max range for each metric across all balls at the given weight.
-function computeRanges(balls, weight) {
-    const ranges = {};
-    METRICS.forEach(m => {
-        const vals = balls.map(b => m.accessor(b, weight)).filter(v => v != null);
-        ranges[m.key] = vals.length >= 2
-            ? { min: Math.min(...vals), max: Math.max(...vals) }
-            : null;
-    });
-    return ranges;
+async function callReplacementApi(ballId) {
+    const url = `${location.origin}/api/algo/replacement?id=${encodeURIComponent(ballId)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err.detail || err.error || `HTTP ${res.status}`;
+        console.error('replacement API detail:', msg);
+        throw new Error(msg);
+    }
+    return res.json();
 }
 
-// Returns a 0–1 score: 1 = identical, 0 = maximally different.
-// Uses weighted normalised Euclidean distance.
-function similarity(target, candidate, weight, ranges) {
-    let sumSq = 0, totalW = 0;
-    METRICS.forEach(m => {
-        const r = ranges[m.key];
-        if (!r || r.max === r.min) return;
-        const vt = m.accessor(target, weight);
-        const vc = m.accessor(candidate, weight);
-        if (vt == null || vc == null) return;
-        const diff = ((vt - vc) / (r.max - r.min)) * m.w;
-        sumSq  += diff * diff;
-        totalW += m.w * m.w;
-    });
-    if (totalW === 0) return 0;
-    const dist = Math.sqrt(sumSq / totalW);
-    return Math.max(0, 1 - dist);
+async function callGapFinderApi(ballIds) {
+    const ids = encodeURIComponent(JSON.stringify(ballIds));
+    const url = `${location.origin}/api/algo/gapFinder?ids=${ids}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
 }
 
 // ── Results rendering ─────────────────────────────────────────────────────────
 
-const IMAGE_BASE = 'https://www.bowwwl.com';
-
-function renderResults() {
+// Called when the user picks a ball from the picker.
+async function renderReplacementResults() {
     if (!selectedBall) return;
 
-    const resultsSection = document.getElementById('rp-results-section');
-    const resultsDiv     = document.getElementById('rp-results');
-    resultsSection.style.display = 'block';
+    const ballId = lookupBallId(selectedBall);
+    if (!ballId) {
+        showResultsError('Could not find this ball in the database.');
+        return;
+    }
 
-    const weight     = parseInt(document.getElementById('rp-weight').value, 10);
-    const candidates = allBalls.filter(b => b !== selectedBall && b.name !== selectedBall.name);
-    const ranges     = computeRanges(allBalls, weight);
+    showLoading(`Finding replacements for ${selectedBall.name}…`);
 
-    const scored = candidates
-        .map(b => ({ ball: b, score: similarity(selectedBall, b, weight, ranges) }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5);
+    try {
+        const results = await callReplacementApi(ballId);
+        renderCards(results, 'replacement');
+    } catch (e) {
+        console.error('replacement API error:', e);
+        showResultsError(`Could not load replacements: ${e.message}`);
+    }
+}
 
-    resultsDiv.innerHTML = '';
+// Called when the "Find Arsenal Gaps" button is clicked.
+async function renderGapFinderResults() {
+    const ids = getArsenalBallIds();
+    if (ids.length === 0) {
+        showResultsError('None of your arsenal balls were found in the database. Try reloading the page.');
+        return;
+    }
 
-    if (scored.length === 0) {
-        resultsDiv.innerHTML = '<p class="rp-notice">No replacement candidates found.</p>';
+    showLoading('Finding the best addition for your arsenal…');
+
+    try {
+        const results = await callGapFinderApi(ids);
+        renderCards(results, 'gap');
+    } catch (e) {
+        console.error('gapFinder API error:', e);
+        showResultsError(`Could not load gap finder results: ${e.message}`);
+    }
+}
+
+function showLoading(msg) {
+    const section = document.getElementById('rp-results-section');
+    section.style.display = 'block';
+    document.getElementById('rp-results').innerHTML =
+        `<p class="rp-notice">${msg}</p>`;
+}
+
+function showResultsError(msg) {
+    const section = document.getElementById('rp-results-section');
+    section.style.display = 'block';
+    document.getElementById('rp-results').innerHTML =
+        `<p class="rp-notice">${msg}</p>`;
+}
+
+// Renders result cards for both replacement and gap-finder responses.
+// Results are already ordered best-first by the backend.
+function renderCards(results, mode) {
+    const div = document.getElementById('rp-results');
+    div.innerHTML = '';
+
+    if (!results || results.length === 0) {
+        div.innerHTML = '<p class="rp-notice">No results found. Algorithm values (early/late, hook, angular) may not be populated in the database yet.</p>';
         return;
     }
 
     const heading = document.createElement('h2');
     heading.className = 'rp-results-heading';
-    heading.textContent = `Top replacements for ${selectedBall.name}`;
-    resultsDiv.appendChild(heading);
+    heading.textContent = mode === 'gap'
+        ? 'Best additions for your arsenal'
+        : `Top replacements for ${selectedBall ? selectedBall.name : ''}`;
+    div.appendChild(heading);
 
-    scored.forEach(({ ball, score }) => {
-        const pct  = Math.round(score * 100);
-        const card = document.createElement('div');
-        card.className = 'rp-card';
+    // Normalize scores to 0–100% within this result set.
+    // Replacement: lower replacementScore = better → invert for display.
+    // Gap finder:  higher shortestDistanceToAnySource = better → use directly.
+    const scoreKey = mode === 'gap' ? 'shortestDistanceToAnySource' : 'replacementScore';
+    const rawScores = results.map(r => Number(r[scoreKey]) || 0);
+    const maxScore  = Math.max(...rawScores, 0.001);
 
-        const imgHtml = ball.image
-            ? `<img class="rp-card-img" src="${IMAGE_BASE}${ball.image}" alt="${ball.name}" loading="lazy" onerror="this.style.display='none'">`
-            : `<div class="rp-card-img-placeholder"></div>`;
-
-        card.innerHTML = `
-            <div class="rp-card-img-wrap">${imgHtml}</div>
-            <div class="rp-card-body">
-                <div class="rp-card-name">${ball.name}</div>
-                ${ball.brand ? `<div class="rp-card-brand">${ball.brand}</div>` : ''}
-                ${buildSpecRow(ball, weight)}
-            </div>
-            <div class="rp-score-wrap">
-                <div class="rp-score-bar-bg">
-                    <div class="rp-score-bar-fill" style="width:${pct}%"></div>
-                </div>
-                <span class="rp-score-pct">${pct}% match</span>
-            </div>
-        `;
-        resultsDiv.appendChild(card);
+    results.slice(0, 5).forEach(r => {
+        const raw = Number(r[scoreKey]) || 0;
+        const pct = mode === 'gap'
+            ? Math.round((raw / maxScore) * 100)
+            : Math.round((1 - raw / maxScore) * 100);
+        const label = mode === 'gap' ? `${pct}% gap fill` : `${pct}% match`;
+        div.appendChild(buildResultCard(r, Math.max(0, pct), label));
     });
 }
 
-function buildSpecRow(ball, weight) {
-    const spec = Array.isArray(ball.specs) ? ball.specs.find(s => s.weight === weight) : null;
-    const parts = [];
-    if (ball.hook_potential != null) parts.push(`Hook: ${ball.hook_potential}`);
-    if (spec) {
-        if (spec.rg   != null) parts.push(`RG: ${spec.rg}`);
-        if (spec.diff != null) parts.push(`Diff: ${spec.diff}`);
-    }
-    return parts.length ? `<div class="rp-card-specs">${parts.join(' · ')}</div>` : '';
+function buildResultCard(result, pct, scoreLabel) {
+    const card = document.createElement('div');
+    card.className = 'rp-card';
+
+    const imgHtml = result.image
+        ? `<img class="rp-card-img" src="${IMAGE_BASE}${result.image}" alt="${result.name || ''}" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="rp-card-img-placeholder"></div>`;
+
+    const specParts = [];
+    if (result.rg   != null) specParts.push(`RG: ${result.rg}`);
+    if (result.diff != null) specParts.push(`Diff: ${result.diff}`);
+    const specsHtml = specParts.length
+        ? `<div class="rp-card-specs">${specParts.join(' · ')}</div>`
+        : '';
+
+    card.innerHTML = `
+        <div class="rp-card-img-wrap">${imgHtml}</div>
+        <div class="rp-card-body">
+            <div class="rp-card-name">${result.name || 'Unknown'}</div>
+            ${result.brand ? `<div class="rp-card-brand">${result.brand}</div>` : ''}
+            ${specsHtml}
+        </div>
+        <div class="rp-score-wrap">
+            <div class="rp-score-bar-bg">
+                <div class="rp-score-bar-fill" style="width:${pct}%"></div>
+            </div>
+            <span class="rp-score-pct">${scoreLabel}</span>
+        </div>
+    `;
+    return card;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -248,9 +294,7 @@ function buildSpecRow(ball, weight) {
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('method-arsenal').addEventListener('click', () => setMethod('arsenal'));
     document.getElementById('method-database').addEventListener('click', () => setMethod('database'));
-    document.getElementById('rp-weight').addEventListener('change', () => {
-        if (selectedBall) renderResults();
-    });
+    document.getElementById('rp-gap-btn').addEventListener('click', renderGapFinderResults);
 
     setupPicker();
     fetchBalls();

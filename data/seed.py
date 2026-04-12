@@ -111,17 +111,14 @@ with open(csv_path, newline="", encoding="utf-8") as f:
             # Ball
             cur.execute(
                 """INSERT INTO ball
-                   (name, description, brand, image, release_date, discontinued, overseas,
-                    factory_finish, core_id, coverstock_id,
-                    early_v_late, smooth_v_angular, hook_potential)
-                   VALUES (%s, %s, %s, %s,
+                   (name, brand, image, release_date, discontinued, overseas,
+                    factory_finish, core_id, coverstock_id)
+                   VALUES (%s, %s, %s,
                            TO_DATE(%s, 'Mon YYYY'),
-                           %s, %s, %s, %s, %s,
-                           NULL, NULL, NULL)
+                           %s, %s, %s, %s, %s)
                    RETURNING id""",
                 (
                     ball_name,
-                    row.get("summary") or None,
                     brand,
                     raw_image,
                     row.get("release_date") or None,

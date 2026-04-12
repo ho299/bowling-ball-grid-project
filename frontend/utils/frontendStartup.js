@@ -56,15 +56,36 @@ app.use('/utils', express.static(__dirname));
 app.use('/images', express.static(path.join(__dirname, '..', 'images')));
 
 app.get('/api/balls', async (_req, res) => {
-  const resFromApi = await fetch(APIROUTE+'/api/balls');
   var allBalls = defaultBalls;
-  if (!resFromApi.ok) {
-    console.log("error: ", resFromApi.status, resFromApi)
-  }
-  else{
-    allBalls = await resFromApi.json();
+  try {
+    const resFromApi = await fetch(APIROUTE+'/api/balls');
+    if (!resFromApi.ok) {
+      console.error(`/api/balls: backend returned ${resFromApi.status} — serving placeholder data`);
+    } else {
+      allBalls = await resFromApi.json();
+    }
+  } catch (err) {
+    console.error(`/api/balls: could not reach backend at ${APIROUTE} — serving placeholder data\n  ${err.message}`);
   }
   res.json(allBalls);
+});
+
+// Generic proxy for all /api/* routes not covered above (algo, specs, etc.)
+// app.use('/api', ...) strips the '/api' prefix from req.url inside the handler.
+app.use('/api', async (req, res) => {
+  try {
+    const target = APIROUTE + '/api' + req.url;
+    const backendRes = await fetch(target);
+    if (!backendRes.ok) {
+      const err = await backendRes.json().catch(() => ({}));
+      return res.status(backendRes.status).json(err);
+    }
+    const data = await backendRes.json();
+    res.json(data);
+  } catch (err) {
+    console.error(`proxy ${req.url} failed: ${err.message}`);
+    res.status(502).json({ error: 'Backend unavailable' });
+  }
 });
 
 app.listen(port, () => {

@@ -54,26 +54,63 @@ PORT=3000
 
 ### Step 3 — Create and populate the database
 
-**Create the database and tables:**
+**3a. Create the database:**
 
 ```bash
-psql -U your_postgres_username -f backend/src/config/database_script.sql
+createdb -U your_postgres_username bowling_db
 ```
 
-**Install Python dependencies and seed the database:**
+Or equivalently via psql:
+
+```bash
+psql -U your_postgres_username -c "CREATE DATABASE bowling_db;"
+```
+
+**3b. Apply the schema:**
+
+```bash
+psql -U your_postgres_username -d bowling_db -f backend/src/config/database_script.sql
+```
+
+> **Known issue:** The first line of `database_script.sql` is `GRANT ALL PRIVILEGES ON DATABASE bowling TO docker_user;` — this is Docker-specific and will produce an error locally (`role "docker_user" does not exist`). This is harmless; the tables will still be created. You can comment out that line to suppress the error.
+
+**3c. Install Python dependencies and seed the database:**
 
 ```bash
 pip install psycopg2-binary python-dotenv
 python data/seed.py
 ```
 
-The seed script reads `data/bowling_ball_data.csv` and populates the `ball`, `core`, `coverstock`, and `specs` tables. It skips rows that already exist, so it is safe to run multiple times.
+The seed script reads `data/bowling_ball_data.csv` and populates the `ball`, `core`, `coverstock`, and `specs` tables. It skips balls that already exist by name, so it is safe to run multiple times.
 
-**Verify the data loaded:**
+**3d. Verify the data loaded:**
 
 ```bash
 psql -U your_postgres_username -d bowling_db -c "SELECT COUNT(*) FROM ball;"
 ```
+
+A successful seed should return several hundred rows.
+
+**3e. Populate algorithm values:**
+
+The seed script inserts raw specs (`rg`, `diff`, `mb_diff`) but does not calculate the derived algorithm values (`early_v_late`, `smooth_v_angular`, `hook_potential`). Run this script once to compute and write those values into the `specs` table:
+
+```bash
+node populate_algo.js
+```
+
+You should see output like:
+
+```
+Found 3200 specs to process...
+  100 updated...
+  ...
+Done.  Updated: 3150  |  Skipped (bad values): 50
+```
+
+Skipped rows are typically spare balls (polyester coverstocks) or specs with values outside the algorithm's expected range — this is expected. Only needs to be run once; re-run it if you re-seed the database.
+
+> **Note:** The Replace page's algorithm-based features (`replacement` and `Find Arsenal Gaps`) will return no results until this step is complete.
 
 ---
 
@@ -90,7 +127,7 @@ This starts the Express API on `http://localhost:3000`.
 You should see output similar to:
 
 ```
-Server running on port 3000
+Server running on http://localhost:3000
 ```
 
 Leave this terminal open for the duration of your testing session.
@@ -102,7 +139,7 @@ Leave this terminal open for the duration of your testing session.
 Open a second terminal and run:
 
 ```bash
-dev=local node frontend/frontendStartup.js
+dev=local node frontend/utils/frontendStartup.js
 ```
 
 This starts a lightweight Express server on port 80 that serves the static frontend files and proxies `/api/balls` requests to the backend. Setting `dev=local` tells the proxy to forward requests to `http://localhost:3000` (your local backend) rather than the Docker container hostname.
@@ -113,7 +150,7 @@ Open your browser to:
 http://localhost/homepage.html
 ```
 
-> **Note:** `package.json` has a `"frontend"` script but it references the wrong filename (`startup.js` instead of `frontendStartup.js`), so `npm run start` and `npm run frontend` will not work as written. Use the direct `node` command above until this is fixed.
+> **Note:** `package.json` has a `"frontend"` script that references the old path (`./frontend/startup.js`), so `npm run frontend` and `npm run start` will not work. Use the direct `node` command above.
 
 ---
 
@@ -121,25 +158,25 @@ http://localhost/homepage.html
 
 With both the backend (Step 4) and frontend server (Step 5) running, navigate to the pages below and confirm each one works:
 
-| Page | URL (Option A) | What to check |
+| Page | URL | What to check |
 |---|---|---|
-| Homepage | `/homepage.html` | Balls plotted on grid, table populated, axis/weight dropdowns work |
-| Compare | `/compare.html` | Ball search returns results, side-by-side comparison table renders |
-| Arsenal | `/arsenal.html` | Ball search returns results, adding a ball saves to the card list, scores and usage fields save correctly |
-| Replace | `/replacement.html` | Database mode ball search returns results, replacement cards appear with match % after selecting a ball |
+| Homepage | `http://localhost/homepage.html` | Balls plotted on grid, table populated, axis/weight dropdowns work |
+| Compare | `http://localhost/compare.html` | Ball search returns results, side-by-side comparison table renders |
+| Arsenal | `http://localhost/arsenal.html` | Ball search returns results, adding a ball saves to the card list |
+| Replace | `http://localhost/replacement.html` | Database mode ball search returns results, replacement cards appear with match % |
 
-If the grid or dropdowns show only placeholder balls (Ball A, Ball B, Ball C), open the browser developer console (`F12 → Console`) and look for fetch errors — the most common causes are the backend not running or the database being empty.
+If the grid or table show only placeholder balls (Ball A, Ball B, Ball C), open the browser developer console (`F12 → Console`) and look for fetch errors — the most common causes are the backend not running or the database being empty.
 
 ---
 
 ### Stopping local servers
 
 - **Backend:** Press `Ctrl+C` in the terminal running `npm run backend`
-- **Frontend server:** Press `Ctrl+C` in the terminal running `node frontend/frontendStartup.js`
+- **Frontend server:** Press `Ctrl+C` in the terminal running `node frontend/utils/frontendStartup.js`
 
 ---
 
-### Project structure (30 MAR 2026)
+### Project structure (12 APR 2026)
 
 ```
 bowling-ball-grid-project/
@@ -149,29 +186,34 @@ bowling-ball-grid-project/
 │   └── src/
 │       ├── app.js                    # Express API entry point
 │       ├── config/
-│       │   ├── db_credentials.js     # PostgreSQL connection pool
-│       │   └── database_setup.js     # Schema setup
+│       │   ├── db_credentials.js     # PostgreSQL connection pool (reads .env)
+│       │   ├── database_setup.js     # Node.js seed script (requires csv-parse — see seed.py instead)
+│       │   └── database_script.sql   # Schema DDL — run once to create all tables
 │       ├── queries/                  # SQL query functions (ball, core, coverstock, specs)
 │       └── routes/                   # API route handlers
 ├── data/
-│   ├── bowling_ball_data.csv         # Source data for seeding
+│   ├── bowling_ball_data.csv         # Source data (~1000+ balls) for seeding
 │   ├── validation_data.json          # Validation reference data
-│   └── seed.py                       # Seed script — loads CSV into PostgreSQL
+│   └── seed.py                       # Python seed script — loads CSV into PostgreSQL
 ├── frontend/
-│   ├── homepage.html                 # Grid/scatter plot + filter panel
-│   ├── compare.html                  # Side-by-side ball comparison
-│   ├── arsenal.html                  # Personal ball collection with scores and usage
-│   ├── replacement.html              # Find replacement balls (arsenal or database)
-│   ├── index.html                    # AWS Amplify redirect shim
-│   ├── app.js                        # Homepage logic (fetch, plot, table, filters)
-│   ├── compare.js                    # Comparison page logic
-│   ├── arsenal.js                    # Arsenal management (localStorage-backed)
-│   ├── replacement.js                # Replacement scoring and search logic
-│   ├── auth.js                       # Login/create account modal (API calls placeholder)
-│   ├── filter-utils.js               # Reusable FilterPanel class
-│   ├── theme.js                      # Dark/light mode toggle (shared by non-homepage pages)
-│   ├── frontendStartup.js            # Node/Express static server + /api/balls proxy
-│   └── styles.css                    # Shared stylesheet
+│   ├── images/                       # Logo and favicon assets
+│   ├── pages/                        # HTML pages (served as root by frontendStartup.js)
+│   │   ├── homepage.html             # Grid/scatter plot + filter panel
+│   │   ├── compare.html              # Side-by-side ball comparison
+│   │   ├── arsenal.html              # Personal ball collection with scores and usage
+│   │   ├── replacement.html          # Find replacement balls (arsenal or database)
+│   │   ├── index.html                # AWS Amplify redirect shim
+│   │   └── styles.css                # Shared stylesheet
+│   └── utils/                        # JavaScript (served under /utils/ by frontendStartup.js)
+│       ├── app.js                    # Homepage logic (fetch, plot, table, filters)
+│       ├── compare.js                # Comparison page logic
+│       ├── arsenal.js                # Arsenal management (localStorage-backed)
+│       ├── replacement.js            # Replacement scoring and search logic
+│       ├── auth.js                   # Login/create account modal (API calls placeholder)
+│       ├── filter-utils.js           # Reusable FilterPanel class
+│       ├── theme.js                  # Dark/light mode toggle (shared by non-homepage pages)
+│       └── frontendStartup.js        # Node/Express static server + /api/balls proxy
+├── populate_algo.js                  # One-time script: calculates and writes algorithm values into specs
 ├── .env                              # Local credentials (git-ignored — create manually)
 └── package.json
 ```

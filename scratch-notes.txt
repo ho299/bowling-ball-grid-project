@@ -106,3 +106,20 @@ psql -U postgres -f backend/src/config/database_script.sql
 
 verify it worked:
 psql -U postgres -d bowling_db -c "\dt"
+
+--------
+algorithms
+--------
+The code for ball replacement and gapFinder have been added to backend/algorithms. They are sql query commands on the backend that use the three calculated values (early_v_late, smooth_v_angular, hook_potential) to perform a shortest distance as hypotenuse.  To connect with the front end, they are both get operations.  
+
+Gap Finder: /api/algo/gapFinder
+pass in options: query-id(ballId to replace needed), discontinued (leave empty to allow all balls), overseas (leave empty to allow all balls)
+
+Replacement Ball*:
+/api/algo/replacement
+pass in options: query-ids(ball Ids of current arsenals needed in json stringify format: '[1, 2, 5]'), discontinued (leave empty to allow all balls), overseas (leave empty to allow all balls)
+*in the pass back, I include the ball closest to the recommendation in case the user is interested.
+
+And the order returned is the best ordering (so best choice listed first, then next best, etc.) If you have any questions, please let me know.  That branch pulled in the main branch, so you should be able to test  without errors.
+
+Other thing to note, these assume the weights will be and stay the same.  As a bowler, I dont see a world where I would want to add a ball or replace a ball with a different weight.  I could add a query flag for ignoring weight restrictions, but again, I see little value

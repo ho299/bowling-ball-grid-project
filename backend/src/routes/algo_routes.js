@@ -12,7 +12,8 @@ router.get('/replacement', async function(req, res){
         res.status(200).json(replacements);
     }
     catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve replacements' });
+        console.error('GET /api/algo/replacement error:', error.message);
+        res.status(500).json({ error: 'Failed to retrieve replacements', detail: error.message });
     }
 });
 
