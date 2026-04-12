@@ -16,6 +16,20 @@ router.get('/ball/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve specs' });
     }
 });
+
+//GET /api/specs/ball/:id - Get specs by ball id
+router.get('/ball/:id/:weight', async (req, res) => {
+    try {
+        const { id, weight } = req.params;
+        const specs = await specQueries.getSpecsByBallIdandWeight(id, weight);
+        if (!specs || specs.length === 0) return res.status(404).json({ error: 'Specs not found for the specified ball id and weight' });
+        res.status(200).json(specs);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to retrieve specs' });
+    }
+});
+
 router.post('/', async (req, res) => {
     try {
         const { ball_id, weight, rg, diff, mb_diff } = req.body;
@@ -23,6 +37,8 @@ router.post('/', async (req, res) => {
         // get ball info
         const ball = await ballQueries.getBallById(ball_id);
 
+        if (!ball) return res.status(404).json({ error: 'Ball not found' });
+        
         const coverstock = await coverstockQueries.getCoverstockById(ball.coverstock_id)
         // extract coverstock and finish
         const finishNumber = algorithm.finishNametoNumber(ball.factory_finish, coverstock.name);
@@ -30,7 +46,7 @@ router.post('/', async (req, res) => {
         // calc algo values
         const bowlingBall = { rg, diff, mb_diff, factory_finish: finishNumber };
 
-        const newSpec = await specQueries.createSpec({
+        const newSpec = await specQueries.createSpecs({
             ball_id,
             weight,
             rg,
@@ -47,3 +63,4 @@ router.post('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to create spec' });
     }
 });
+module.exports = router;

@@ -1,4 +1,4 @@
-const pool = require('../config/db'); // calling the db
+const pool = require('../config/db_credentials'); // calling the db
 
 //GET all the specs ball id
 const getSpecsByBallId = async (id) => {
@@ -32,3 +32,10 @@ const createSpecs = async ({ball_id, weight, rg, diff, mb_diff, evl, sva, hook})
     const result = await pool.query(query, [ball_id, weight,  rg, diff, mb_diff, evl, sva, hook]);
     return result.rows[0];
 }
+
+module.exports = {
+    getSpecsByBallId,
+    getSpecsByBallIdandWeight,
+    createSpecs,
+    getFirstSpecByBallId
+};

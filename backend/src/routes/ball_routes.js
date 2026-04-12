@@ -29,57 +29,73 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve the bowling ball' });
     }
 });
-
-//POST /api/ball - Create a new bowling ball
 router.post('/', async (req, res) => {
     try {
         const { name, image, brand, release_date, discontinued,
-            overseas, factory_finish, core, coverstock, specs } = req.body;
+            overseas, factory_finish, core, coverstock, specs,
+            core_id, coverstock_id } = req.body;  // ← also accept existing IDs
 
-        const createdCore = await coreQueries.createCore({
-            name: core.name,
-            type: core.type,
-            description: core.description
-        });
+        // Use existing core or create a new one
+        let finalCoreId;
+        if (core_id) {
+            finalCoreId = core_id;
+        } else {
+            const createdCore = await coreQueries.createCore({
+                name: core.name,
+                type: core.type,
+                description: core.description
+            });
+            finalCoreId = createdCore.id;
+        }
 
-        const createdCoverstock = await coverstockQueries.createCoverstock({
-            name: coverstock.name,
-            type: coverstock.type,
-            description: coverstock.description
-        });
-        
-        const finishNumber = algorithm.finishNametoNumber(factory_finish, coverstock.name);
-        
+        // Use existing coverstock or create a new one
+        let finalCoverstockId;
+        if (coverstock_id) {
+            finalCoverstockId = coverstock_id;
+        } else {
+            const createdCoverstock = await coverstockQueries.createCoverstock({
+                name: coverstock.name,
+                type: coverstock.type,
+                description: coverstock.description
+            });
+            finalCoverstockId = createdCoverstock.id;
+        }
+
+        const finishNumber = algorithm.finishNametoNumber(
+            factory_finish,
+            coverstock?.name ?? (await coverstockQueries.getCoverstockById(finalCoverstockId)).name
+        );
+
         const newBall = await ballQueries.createBall({
-            name, image,brand, release_date, discontinued,
-            overseas, factory_finish, core_id: createdCore.id,
-            coverstock_id: createdCoverstock.id
+            name, image, brand, release_date, discontinued,
+            overseas, factory_finish,
+            core_id: finalCoreId,
+            coverstock_id: finalCoverstockId
         });
 
+        const createdSpecs = specs && specs.length > 0
+            ? await Promise.all(
+                specs.map(spec => {
+                    const bowlingBall = {
+                        rg: spec.rg,
+                        diff: spec.diff,
+                        mb_diff: spec.mb_diff,
+                        factory_finish: finishNumber
+                    };
+                    return specQueries.createSpecs({
+                        ball_id: newBall.id,
+                        weight: spec.weight,
+                        rg: spec.rg,
+                        diff: spec.diff,
+                        mb_diff: spec.mb_diff,
+                        early_v_late: algorithm.earlyVLate(bowlingBall),
+                        smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
+                        hook_potential: algorithm.hookPotential(bowlingBall)
+                    });
+                })
+            ) : [];
 
-       const createdSpecs = specs && specs.length > 0
-        ? await Promise.all(
-            specs.map(spec => {
-                const bowlingBall = {
-                    rg: spec.rg,
-                    diff: spec.diff,
-                    mb_diff: spec.mb_diff,
-                    factory_finish: finishNumber
-                };
-                return specQueries.createSpec({
-                    ball_id: newBall.id,
-                    weight: spec.weight,
-                    rg: spec.rg,
-                    diff: spec.diff,
-                    mb_diff: spec.mb_diff,
-                    early_v_late: algorithm.earlyVLate(bowlingBall),
-                    smooth_v_angular: algorithm.smoothVAngular(bowlingBall),
-                    hook_potential: algorithm.hookPotential(bowlingBall)
-                });
-            })
-        ) : [];
-
-        res.status(201).json({ ...newBall, specs: createdSpecs }); 
+        res.status(201).json({ ...newBall, specs: createdSpecs });
 
     } catch (error) {
         console.error(error);

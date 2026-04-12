@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require('../config/db_credentials');
 
 const addModification = async ({ owned_ball_id, mod_type, description = null, rg = null, diff = null, mb_diff = null, early_v_late = null, smooth_v_angular = null, hook_potential = null }) => {
     const result = await pool.query(

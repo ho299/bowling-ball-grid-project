@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 
 //CREATE
 // POST /api/user — create a user
+// ✅ this registers the route
 router.post('/', async (req, res) => {
     try {
         const { first_name, last_name, about = null, email, password } = req.body;
@@ -52,7 +53,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// GET /api/users — get all users
+// // GET /api/users — get all users
 // router.get('/', async (req, res) => {
 //     try {
 //         const users = await userQueries.getAllUsers();
@@ -91,3 +92,4 @@ router.delete('/:id', async (req,res) => {
         res.status(500).json({ error: 'Failed to delete user' });
     }
 });
+module.exports = router;

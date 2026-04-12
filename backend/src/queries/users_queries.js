@@ -1,11 +1,12 @@
-const pool = require('../config/db'); // calling the db
+const pool = require('../config/db_credentials'); // calling the db
 
-const createUser = async () => {
-    const query = `INSERT INTO user (first_name, last_name, about, email, password)
-                    VALUES ($1,$2, $3, $4, $5)`;
+const createUser = async ({ first_name, last_name, about, email, password }) => {
+    const query = `INSERT INTO users (first_name, last_name, about, email, password)
+                    VALUES ($1,$2, $3, $4, $5)
+                    RETURNING id`;
       const result = await pool.query(query, [first_name, last_name, about, email, password]);
       return result.rows[0];
-}
+};
 
 const getUserByEmail = async (email) => {
     const result = await pool.query(
@@ -16,7 +17,7 @@ const getUserByEmail = async (email) => {
 
 const getUserById = async (id) => {
     const result = await pool.query(
-        'SELECT id, name, about, email FROM users WHERE id = $1', 
+        'SELECT id, first_name, last_name, about, email FROM users WHERE id = $1', 
         [id]
     );
     return result.rows[0];
@@ -31,16 +32,17 @@ const updateUser = async (id,{first_name = null, last_name = null,about=null,ema
                 about = COALESCE($4, about), 
                 email = COALESCE($5, email), 
                 password = COALESCE($6, password)
-                WHERE id = $1`,
+                WHERE id = $1
+                RETURNING *`,
          [id,first_name,last_name,about,email,password]);
     return result.rows[0];
 };
 
 const deleteUser = async (id) => {
-  const query = 'DELETE FROM user WHERE id = $1';
+  const query = 'DELETE FROM users WHERE id = $1 RETURNING *';
   const result = await pool.query(query, [id]);
   return result.rows[0];
-}
+};
 
 module.exports = {
     createUser,

@@ -26,12 +26,15 @@ router.get('/:id', async (req, res) => {
 });
 //Post /api/coverstocks - Create a new coverstock
 router.post('/', async (req, res) => {
+    // console.log("POST /api/coverstocks hit", req.body);  // ← add this
     try {
         const { name, type, description } = req.body;
+        // console.log("Creating coverstock:", { name, type, description });  // ← and this
         const newCoverstock = await converstockQueries.createCoverstock({ name, type, description });
         res.status(201).json(newCoverstock);
     }
     catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to create the coverstock' });
     }
 });

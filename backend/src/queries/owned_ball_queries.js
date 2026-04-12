@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const pool = require('../config/db_credentials');
 
 const addOwnedBall = async ({ user_id, ball_id, weight, usage = 0, note = null, condition = null, status = null, drilled = false }) => {
     const result = await pool.query(
