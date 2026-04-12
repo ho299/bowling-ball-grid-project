@@ -1,3 +1,4 @@
+/* global FilterPanel */
 // Canvas and drawing for plotting the scatter/grid
 const gridCanvas = document.getElementById('gridCanvas');
 const ctx = gridCanvas.getContext('2d');
@@ -22,7 +23,8 @@ let weightSelect = null;
 let bowlingBalls = [];       // array of objects (each ball with properties)
 let numericFields = [];      // axis field value-keys, derived from AXIS_FIELDS
 let selectedIndex = null;    // index of the currently selected ball (or null)
-let filterPanel  = null;     // FilterPanel instance, built after data loads
+/** @type {any} FilterPanel instance, built after data loads (class loaded via script tag) */
+let filterPanel  = null;
 
 // Fixed axis field definitions: value = option key, label = display name,
 // accessor(ball, selectedWeight) returns the numeric value to plot.
@@ -112,6 +114,23 @@ async function fetchData() {
     console.log('fetchData: loaded', bowlingBalls.length, 'balls');
     console.log('fetchData: numericFields=', numericFields);
     renderTable();
+
+    // Expose for ball-search-modal.js: select and highlight a ball by name.
+    window.selectBallByName = function (name) {
+        const lower = name.toLowerCase();
+        const idx = bowlingBalls.findIndex(b => (b.name || '').toLowerCase() === lower);
+        if (idx !== -1) {
+            selectBall(idx);
+            gridCanvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    // Handle ?highlight= param set by ball-search-modal when navigating from another page.
+    const highlightName = new URLSearchParams(location.search).get('highlight');
+    if (highlightName) {
+        window.selectBallByName(highlightName);
+        history.replaceState(null, '', location.pathname);
+    }
 }
 
 // Set numericFields from the fixed AXIS_FIELDS list.
@@ -293,26 +312,59 @@ function renderTable() {
             td.textContent = (val !== null && val !== undefined) ? val : '—';
             tr.appendChild(td);
         });
-        tr.addEventListener('click', () => selectBall(idx));
+        tr.addEventListener('click', () => {
+            if (typeof window.showBallDetail === 'function') {
+                window.showBallDetail(bowlingBalls[idx]);
+            }
+        });
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);
     dataTableDiv.appendChild(table);
 
-    // Scroll the selected row into view without moving it
+    // Scroll the selected row into view while accounting for the sticky thead.
+    // scrollIntoView({ block: 'nearest' }) aligns the row's top edge with the
+    // container top, but the sticky header sits exactly there and covers it.
+    // Instead, compute positions manually and offset by the thead height.
     if (selectedIndex !== null) {
         const selectedRow = tbody.querySelector(`tr[data-index="${selectedIndex}"]`);
-        if (selectedRow) selectedRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const tableScroll = dataTableDiv.closest('.table-scroll');
+        if (selectedRow && tableScroll) {
+            const thead        = tableScroll.querySelector('thead');
+            const theadH       = thead ? thead.getBoundingClientRect().height : 0;
+            const rowRect      = selectedRow.getBoundingClientRect();
+            const containerRect = tableScroll.getBoundingClientRect();
+            const relTop       = rowRect.top    - containerRect.top;
+            const relBottom    = rowRect.bottom - containerRect.top;
+            if (relTop < theadH) {
+                // Row is hidden behind or above the sticky header — scroll up.
+                tableScroll.scrollTop += relTop - theadH;
+            } else if (relBottom > tableScroll.clientHeight) {
+                // Row is below the visible area — scroll down.
+                tableScroll.scrollTop += relBottom - tableScroll.clientHeight;
+            }
+        }
     }
     console.log('renderTable: rendered', filteredIndices.length, 'of', bowlingBalls.length, 'rows');
 }
 
-// Mark a ball as selected by index, refresh the table row styles and redraw
-// the canvas so the selected point appears highlighted.
+// Mark a ball as selected by index, redraw the canvas immediately so the
+// highlight appears, then blur the table panel out, re-render it, and fade it
+// back in.
 function selectBall(idx) {
     selectedIndex = idx;
     drawGrid();
-    renderTable();
+
+    const tableScroll = document.querySelector('.table-scroll');
+    if (!tableScroll) { renderTable(); return; }
+
+    tableScroll.classList.add('table-loading');
+    setTimeout(() => {
+        renderTable();
+        // rAF ensures the DOM has updated before we remove the class so the
+        // fade-in transition actually runs.
+        requestAnimationFrame(() => tableScroll.classList.remove('table-loading'));
+    }, 160);
 }
 
 /* Sends the display labels of the selected axes to the HTML axis label elements */

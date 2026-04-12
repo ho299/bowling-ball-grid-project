@@ -167,6 +167,8 @@ function renderArsenal() {
     const countEl = document.getElementById('arsenal-count');
     const arsenal = loadArsenal();
 
+    renderDashboard(arsenal);
+
     countEl.textContent = arsenal.length ? `(${arsenal.length})` : '';
     listEl.innerHTML = '';
 
@@ -306,6 +308,124 @@ function buildCard(entry) {
     });
 
     return card;
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+
+function renderDashboard(arsenal) {
+    const section   = document.getElementById('arsenal-dashboard-section');
+    const container = document.getElementById('arsenal-dashboard');
+
+    if (!arsenal || arsenal.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = 'block';
+
+    const allScores  = arsenal.flatMap(b => b.scores || []);
+    const totalGames = arsenal.reduce((sum, b) => sum + (b.gamesPlayed || 0), 0);
+    const scoringAvg = allScores.length
+        ? Math.round(allScores.reduce((a, c) => a + c, 0) / allScores.length)
+        : null;
+    const personalBest = allScores.length ? Math.max(...allScores) : null;
+
+    const RANGES = [
+        { label: '< 150',   test: s => s < 150 },
+        { label: '150–179', test: s => s >= 150 && s <= 179 },
+        { label: '180–199', test: s => s >= 180 && s <= 199 },
+        { label: '200–219', test: s => s >= 200 && s <= 219 },
+        { label: '220–249', test: s => s >= 220 && s <= 249 },
+        { label: '250+',    test: s => s >= 250 },
+    ];
+    const distCounts = RANGES.map(r => allScores.filter(r.test).length);
+    const maxDist    = Math.max(...distCounts, 1);
+
+    const distHtml = allScores.length ? `
+        <div class="arsenal-dash-dist-wrap">
+            <div class="arsenal-dash-dist-title">Score Distribution</div>
+            ${RANGES.map((r, i) => `
+                <div class="arsenal-dash-dist-row">
+                    <div class="arsenal-dash-dist-label">${r.label}</div>
+                    <div class="arsenal-dash-dist-bar-bg">
+                        <div class="arsenal-dash-dist-bar-fill" style="width:${Math.round((distCounts[i] / maxDist) * 100)}%"></div>
+                    </div>
+                    <div class="arsenal-dash-dist-count">${distCounts[i]}</div>
+                </div>`).join('')}
+        </div>` : '';
+
+    container.innerHTML = `
+        <div class="arsenal-dash-stats">
+            <div class="arsenal-dash-stat-card">
+                <div class="arsenal-dash-stat-value">${arsenal.length}</div>
+                <div class="arsenal-dash-stat-label">Balls</div>
+            </div>
+            <div class="arsenal-dash-stat-card">
+                <div class="arsenal-dash-stat-value">${totalGames}</div>
+                <div class="arsenal-dash-stat-label">Total Games</div>
+            </div>
+            <div class="arsenal-dash-stat-card">
+                <div class="arsenal-dash-stat-value">${scoringAvg !== null ? scoringAvg : '—'}</div>
+                <div class="arsenal-dash-stat-label">Scoring Avg</div>
+            </div>
+            <div class="arsenal-dash-stat-card">
+                <div class="arsenal-dash-stat-value">${personalBest !== null ? personalBest : '—'}</div>
+                <div class="arsenal-dash-stat-label">Personal Best</div>
+            </div>
+        </div>
+        <div class="arsenal-dash-body">
+            <div class="arsenal-dash-table-wrap">
+                <table class="arsenal-dash-table">
+                    <thead>
+                        <tr>
+                            <th>Ball</th>
+                            <th>Weight</th>
+                            <th>Avg</th>
+                            <th>High</th>
+                            <th>Games</th>
+                            <th>Condition</th>
+                            <th>Trend</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${arsenal.map(b => buildTableRow(b)).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ${distHtml}
+        </div>
+    `;
+}
+
+function buildTableRow(b) {
+    const scores = b.scores || [];
+    const avg    = scores.length
+        ? Math.round(scores.reduce((a, c) => a + c, 0) / scores.length)
+        : null;
+    const high   = scores.length ? Math.max(...scores) : null;
+    const condMap = { dry: 'Dry', medium: 'Medium', heavy: 'Heavy', '': '—' };
+
+    let trend = '<span class="dash-trend-flat">—</span>';
+    if (scores.length >= 6) {
+        const last5 = scores.slice(-5);
+        const prev5 = scores.slice(-10, -5);
+        if (prev5.length > 0) {
+            const lastAvg = last5.reduce((a, c) => a + c, 0) / last5.length;
+            const prevAvg = prev5.reduce((a, c) => a + c, 0) / prev5.length;
+            if (lastAvg > prevAvg + 2)      trend = '<span class="dash-trend-up">↑</span>';
+            else if (lastAvg < prevAvg - 2) trend = '<span class="dash-trend-down">↓</span>';
+        }
+    }
+
+    return `
+        <tr>
+            <td class="dash-ball-name">${b.name}</td>
+            <td>${b.weight} lb</td>
+            <td>${avg !== null ? avg : '—'}</td>
+            <td>${high !== null ? high : '—'}</td>
+            <td>${b.gamesPlayed || 0}</td>
+            <td>${condMap[b.condition] !== undefined ? condMap[b.condition] : '—'}</td>
+            <td>${trend}</td>
+        </tr>`;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
