@@ -16,6 +16,7 @@ const getAllBalls = async () => {
               LEFT JOIN core c ON c.id = b.core_id
               LEFT JOIN coverstock cs ON cs.id = b.coverstock_id
               LEFT JOIN specs s ON s.ball_id = b.id
+              WHERE s.rg IS NOT NULL AND s.diff IS NOT NULL
               GROUP BY b.id, c.name, c.type, cs.name, cs.type
               ORDER BY b.release_date DESC`;
   const result = await pool.query(query);
