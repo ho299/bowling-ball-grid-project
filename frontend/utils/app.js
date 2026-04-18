@@ -1,4 +1,4 @@
-/* global FilterPanel */
+// @ts-nocheck — plain browser script; globals (FilterPanel) loaded via separate <script> tags
 // Canvas and drawing for plotting the scatter/grid
 const gridCanvas = document.getElementById('gridCanvas');
 const ctx = gridCanvas.getContext('2d');
@@ -232,33 +232,44 @@ function plotBowlingBalls(xField, yField) {
     const xMin = Math.min(...validX), xMax = Math.max(...validX);
     const yMin = Math.min(...validY), yMax = Math.max(...validY);
 
+    // First pass: compute canvas coordinates for all visible balls.
     visible.forEach((ball, i) => {
         const xVal = allX[i];
         const yVal = allY[i];
-        const idx  = bowlingBalls.indexOf(ball);
-
         if (xVal == null || yVal == null) return;
 
         const xRatio = (xMax === xMin) ? 0.5 : (xVal - xMin) / (xMax - xMin);
         const yRatio = (yMax === yMin) ? 0.5 : (yVal - yMin) / (yMax - yMin);
 
-        const x = padding + xRatio * (gridCanvas.width - 2 * padding);
-        const y = gridCanvas.height - padding - yRatio * (gridCanvas.height - 2 * padding);
+        ball._x = padding + xRatio * (gridCanvas.width  - 2 * padding);
+        ball._y = gridCanvas.height - padding - yRatio * (gridCanvas.height - 2 * padding);
+    });
 
-        ball._x = x;
-        ball._y = y;
-
+    // Second pass: draw unselected balls first so the selected ball always
+    // renders on top regardless of its position in the data array.
+    visible.forEach(ball => {
+        const idx = bowlingBalls.indexOf(ball);
+        if (ball._x == null || ball._y == null || idx === selectedIndex) return;
         ctx.beginPath();
-        ctx.arc(x, y, (selectedIndex === idx) ? 9 : 6, 0, 2 * Math.PI);
-        ctx.fillStyle = (selectedIndex === idx) ? '#ff4444' : '#0077cc';
+        ctx.arc(ball._x, ball._y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#0077cc';
         ctx.fill();
-        if (selectedIndex === idx) {
+    });
+
+    // Third pass: draw the selected ball on top.
+    if (selectedIndex !== null) {
+        const sel = bowlingBalls[selectedIndex];
+        if (sel && sel._x != null && sel._y != null) {
+            ctx.beginPath();
+            ctx.arc(sel._x, sel._y, 9, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ff4444';
+            ctx.fill();
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#cc0000';
             ctx.stroke();
             ctx.lineWidth = 1;
         }
-    });
+    }
 }
 
 // Render an HTML table of `bowlingBalls` under the canvas. Clicking a row
