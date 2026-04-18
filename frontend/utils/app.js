@@ -56,6 +56,64 @@ const AXIS_FIELDS = [
     { value: 'smooth_v_angular', label: 'Smooth vs. Angular',   accessor: (b, w) => getSpec(b, w, 'smooth_v_angular') },
 ];
 
+// Draw numeric tick labels on the canvas X and Y axes.
+function drawAxisLabels(xMin, xMax, yMin, yMax) {
+    const padding   = 40;
+    const TICKS     = 5;
+    const isDark    = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#aaa' : '#555';
+    const tickColor = isDark ? '#666' : '#bbb';
+
+    const xRange = xMax - xMin || 1;
+    const yRange = yMax - yMin || 1;
+
+    function fmt(val, range) {
+        if (range > 100) return Math.round(val).toString();
+        if (range > 10)  return val.toFixed(0);
+        if (range > 1)   return val.toFixed(1);
+        if (range > 0.1) return val.toFixed(2);
+        return val.toFixed(3);
+    }
+
+    ctx.save();
+    ctx.font      = '10px sans-serif';
+    ctx.fillStyle = textColor;
+
+    // Y axis — labels on the left, tick marks touching the axis line
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= TICKS; i++) {
+        const frac = i / TICKS;
+        const val  = yMin + frac * yRange;
+        const y    = gridCanvas.height - padding - frac * (gridCanvas.height - 2 * padding);
+        ctx.fillText(fmt(val, yRange), padding - 6, y);
+        ctx.strokeStyle = tickColor;
+        ctx.lineWidth   = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding - 3, y);
+        ctx.lineTo(padding,     y);
+        ctx.stroke();
+    }
+
+    // X axis — labels below the bottom axis line
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i <= TICKS; i++) {
+        const frac = i / TICKS;
+        const val  = xMin + frac * xRange;
+        const x    = padding + frac * (gridCanvas.width - 2 * padding);
+        ctx.fillText(fmt(val, xRange), x, gridCanvas.height - padding + 4);
+        ctx.strokeStyle = tickColor;
+        ctx.lineWidth   = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, gridCanvas.height - padding);
+        ctx.lineTo(x, gridCanvas.height - padding + 3);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
 // Return a spec field value for a given ball and weight, or null if not available.
 function getSpec(ball, weight, field) {
     if (!Array.isArray(ball.specs)) return null;
@@ -269,6 +327,8 @@ function plotBowlingBalls(xField, yField) {
 
     const xMin = Math.min(...validX), xMax = Math.max(...validX);
     const yMin = Math.min(...validY), yMax = Math.max(...validY);
+
+    drawAxisLabels(xMin, xMax, yMin, yMax);
 
     // First pass: compute canvas coordinates for all visible balls.
     visible.forEach((ball, i) => {
