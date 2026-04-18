@@ -319,6 +319,9 @@
                         <select class="bsm-weight-select">${weightOptions}</select>
                         <button class="bsm-add-arsenal-btn">Add to My Arsenal</button>
                     </div>
+                    <a class="bsm-purchase-btn"
+                       href="https://www.bowlingball.com/search?q=${encodeURIComponent(ball.name || '')}"
+                       target="_blank" rel="noopener noreferrer">Purchase</a>
                 </div>
             </div>
         `;

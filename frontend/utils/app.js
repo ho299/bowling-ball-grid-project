@@ -305,6 +305,8 @@ function renderTable() {
         th.textContent = field.label;
         headerRow.appendChild(th);
     });
+    // Empty header for the detail-button column
+    headerRow.appendChild(document.createElement('th'));
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
@@ -314,20 +316,36 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.dataset.index = idx;
         if (selectedIndex === idx) tr.classList.add('selected-row');
+
         const nameTd = document.createElement('td');
         nameTd.textContent = ball.name || '';
         tr.appendChild(nameTd);
+
         AXIS_FIELDS.forEach(field => {
             const td = document.createElement('td');
             const val = field.accessor(ball, selectedWeight);
             td.textContent = (val !== null && val !== undefined) ? val : '—';
             tr.appendChild(td);
         });
-        tr.addEventListener('click', () => {
+
+        // Three-dots cell — opens the ball detail pop-up without selecting
+        const dotsTd = document.createElement('td');
+        dotsTd.className = 'row-detail-cell';
+        const dotsBtn = document.createElement('button');
+        dotsBtn.className = 'row-detail-btn';
+        dotsBtn.setAttribute('aria-label', `Details for ${ball.name || 'ball'}`);
+        dotsBtn.textContent = '⋮';
+        dotsBtn.addEventListener('click', e => {
+            e.stopPropagation();
             if (typeof window.showBallDetail === 'function') {
-                window.showBallDetail(bowlingBalls[idx]);
+                window.showBallDetail(ball);
             }
         });
+        dotsTd.appendChild(dotsBtn);
+        tr.appendChild(dotsTd);
+
+        // Row click highlights the ball on the grid
+        tr.addEventListener('click', () => selectBall(idx));
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Compare page: side-by-side bowling ball comparison
 
 let allBalls = [];
@@ -25,9 +26,9 @@ const COMPARE_FIELDS = [
     { key: 'coverstock_type', label: 'Coverstock Type', type: 'text', accessor: b => b.coverstock_type || '—' },
 
     { section: 'Performance Ratings' },
-    { key: 'hook_potential',   label: 'Hook Potential',    type: 'bar', accessor: b => b.hook_potential },
-    { key: 'early_v_late',     label: 'Early vs. Late',    type: 'bar', accessor: b => b.early_v_late },
-    { key: 'smooth_v_angular', label: 'Smooth vs. Angular',type: 'bar', accessor: b => b.smooth_v_angular },
+    { key: 'hook_potential',   label: 'Hook Potential',    type: 'spec', accessor: (b, w) => getSpec(b, w, 'hook_potential') },
+    { key: 'early_v_late',     label: 'Early vs. Late',    type: 'spec', accessor: (b, w) => getSpec(b, w, 'early_v_late') },
+    { key: 'smooth_v_angular', label: 'Smooth vs. Angular',type: 'spec', accessor: (b, w) => getSpec(b, w, 'smooth_v_angular') },
 
     { section: 'Specs' },
     { key: 'rg',      label: 'Radius of Gyration', type: 'spec', accessor: (b, w) => getSpec(b, w, 'rg') },
