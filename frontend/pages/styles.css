@@ -688,6 +688,13 @@ body.dark-mode .ct-bar-fill {
     border-radius: 6px;
     padding: 12px 16px;
     margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.rp-card:hover {
+    border-color: #0077cc;
+    box-shadow: 0 2px 8px rgba(0, 119, 204, 0.15);
 }
 
 .rp-card-img-wrap { flex-shrink: 0; }
