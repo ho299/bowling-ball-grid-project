@@ -26,6 +26,24 @@ let selectedIndex = null;    // index of the currently selected ball (or null)
 /** @type {any} FilterPanel instance, built after data loads (class loaded via script tag) */
 let filterPanel  = null;
 
+// Table sort state
+let sortField = null;   // null | 'name' | AXIS_FIELDS[*].value
+let sortDir   = 'asc';  // 'asc' | 'desc'
+
+// Outlier filter state
+let ignoreOutliers = false;
+
+// Returns { min, max } bounds for field values within ±1 std dev, or null if not enough data.
+function computeOutlierBounds(balls, weight, fieldKey) {
+    const fieldDef = AXIS_FIELDS.find(f => f.value === fieldKey);
+    if (!fieldDef) return null;
+    const vals = balls.map(b => fieldDef.accessor(b, weight)).filter(v => v != null);
+    if (vals.length < 2) return null;
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const std  = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length);
+    return { min: mean - std, max: mean + std };
+}
+
 // Fixed axis field definitions: value = option key, label = display name,
 // accessor(ball, selectedWeight) returns the numeric value to plot.
 const AXIS_FIELDS = [
@@ -109,6 +127,12 @@ async function fetchData() {
     // Resolve the weight select now that FilterPanel has rendered it
     weightSelect = document.getElementById('weight-select');
     weightSelect.addEventListener('change', () => { drawGrid(); renderTable(); });
+
+    document.getElementById('ignore-outliers').addEventListener('change', e => {
+        ignoreOutliers = e.target.checked;
+        drawGrid();
+        renderTable();
+    });
 
     drawGrid();
     console.log('fetchData: loaded', bowlingBalls.length, 'balls');
@@ -219,9 +243,23 @@ function plotBowlingBalls(xField, yField) {
     bowlingBalls.forEach(b => { b._x = null; b._y = null; });
 
     // Only plot balls that pass the active filters
-    const visible = filterPanel
+    let visible = filterPanel
         ? bowlingBalls.filter(b => filterPanel.passes(b, selectedWeight))
         : bowlingBalls;
+
+    if (ignoreOutliers) {
+        const xBounds = computeOutlierBounds(visible, selectedWeight, xField);
+        const yBounds = computeOutlierBounds(visible, selectedWeight, yField);
+        if (xBounds && yBounds) {
+            visible = visible.filter(b => {
+                const xv = xDef ? xDef.accessor(b, selectedWeight) : null;
+                const yv = yDef ? yDef.accessor(b, selectedWeight) : null;
+                return xv != null && yv != null &&
+                       xv >= xBounds.min && xv <= xBounds.max &&
+                       yv >= yBounds.min && yv <= yBounds.max;
+            });
+        }
+    }
 
     const allX = visible.map(b => xDef ? xDef.accessor(b, selectedWeight) : null);
     const allY = visible.map(b => yDef ? yDef.accessor(b, selectedWeight) : null);
@@ -282,9 +320,29 @@ function renderTable() {
     const selectedWeight = parseInt(weightSelect.value, 10);
 
     // Apply active filters; preserve original indices for selection
-    const filteredIndices = filterPanel
+    let filteredIndices = filterPanel
         ? bowlingBalls.map((_, i) => i).filter(i => filterPanel.passes(bowlingBalls[i], selectedWeight))
         : bowlingBalls.map((_, i) => i);
+
+    if (ignoreOutliers) {
+        const xField   = xAxisSelect.value;
+        const yField   = yAxisSelect.value;
+        const visibles = filteredIndices.map(i => bowlingBalls[i]);
+        const xBounds  = computeOutlierBounds(visibles, selectedWeight, xField);
+        const yBounds  = computeOutlierBounds(visibles, selectedWeight, yField);
+        if (xBounds && yBounds) {
+            const xDef = AXIS_FIELDS.find(f => f.value === xField);
+            const yDef = AXIS_FIELDS.find(f => f.value === yField);
+            filteredIndices = filteredIndices.filter(i => {
+                const b  = bowlingBalls[i];
+                const xv = xDef ? xDef.accessor(b, selectedWeight) : null;
+                const yv = yDef ? yDef.accessor(b, selectedWeight) : null;
+                return xv != null && yv != null &&
+                       xv >= xBounds.min && xv <= xBounds.max &&
+                       yv >= yBounds.min && yv <= yBounds.max;
+            });
+        }
+    }
 
     // Update "Showing X of Y" counter
     const countEl = document.getElementById('ball-count');
@@ -294,17 +352,45 @@ function renderTable() {
             : `(${bowlingBalls.length})`;
     }
 
+    // Sort filteredIndices before rendering
+    if (sortField) {
+        filteredIndices.sort((a, b) => {
+            let va, vb;
+            if (sortField === 'name') {
+                va = (bowlingBalls[a].name || '').toLowerCase();
+                vb = (bowlingBalls[b].name || '').toLowerCase();
+            } else {
+                const fieldDef = AXIS_FIELDS.find(f => f.value === sortField);
+                va = fieldDef ? fieldDef.accessor(bowlingBalls[a], selectedWeight) : null;
+                vb = fieldDef ? fieldDef.accessor(bowlingBalls[b], selectedWeight) : null;
+                if (va == null && vb == null) return 0;
+                if (va == null) return 1;
+                if (vb == null) return -1;
+            }
+            if (va < vb) return sortDir === 'asc' ? -1 : 1;
+            if (va > vb) return sortDir === 'asc' ?  1 : -1;
+            return 0;
+        });
+    }
+
+    function makeSortTh(label, key) {
+        const th = document.createElement('th');
+        th.className = 'sortable-th';
+        th.textContent = label;
+        if (sortField === key) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+        th.addEventListener('click', () => {
+            if (sortField === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            else { sortField = key; sortDir = 'asc'; }
+            renderTable();
+        });
+        return th;
+    }
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    const nameTh = document.createElement('th');
-    nameTh.textContent = 'Name';
-    headerRow.appendChild(nameTh);
-    AXIS_FIELDS.forEach(field => {
-        const th = document.createElement('th');
-        th.textContent = field.label;
-        headerRow.appendChild(th);
-    });
+    headerRow.appendChild(makeSortTh('Name', 'name'));
+    AXIS_FIELDS.forEach(field => headerRow.appendChild(makeSortTh(field.label, field.value)));
     // Empty header for the detail-button column
     headerRow.appendChild(document.createElement('th'));
     thead.appendChild(headerRow);
