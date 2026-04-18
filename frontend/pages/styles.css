@@ -621,6 +621,13 @@ body.dark-mode .ct-bar-fill {
     background-color: #4da6ff;
 }
 
+.ct-diff-pos  { color: #1a9e3a; font-size: 12px; }
+.ct-diff-neg  { color: #cc2200; font-size: 12px; }
+.ct-diff-zero { color: var(--text-secondary, #888); font-size: 12px; }
+
+body.dark-mode .ct-diff-pos { color: #4dcc6a; }
+body.dark-mode .ct-diff-neg { color: #ff6644; }
+
 /* ── Replacement page ─────────────────────────────────────────────────────── */
 
 .replace-page {
