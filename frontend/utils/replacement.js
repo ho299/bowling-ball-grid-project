@@ -261,6 +261,30 @@ function buildResultCard(result, pct, scoreLabel) {
     const card = document.createElement('div');
     card.className = 'rp-card';
 
+    // Open the shared ball detail pop-up on click.
+    // Normalise the flat result fields into the specs-array format showBallDetail expects.
+    card.addEventListener('click', () => {
+        if (typeof window.showBallDetail !== 'function') return;
+        window.showBallDetail({
+            name:           result.name,
+            brand:          result.brand,
+            image:          result.image,
+            release_date:   result.release_date,
+            factory_finish: result.factory_finish,
+            discontinued:   result.discontinued,
+            overseas:       result.overseas,
+            specs: [{
+                weight:           result.weight,
+                rg:               result.rg,
+                diff:             result.diff,
+                mb_diff:          result.mb_diff,
+                hook_potential:   result.hook_potential,
+                early_v_late:     result.early_v_late,
+                smooth_v_angular: result.smooth_v_angular,
+            }],
+        });
+    });
+
     const imgHtml = result.image
         ? `<img class="rp-card-img" src="${IMAGE_BASE}${result.image}" alt="${result.name || ''}" loading="lazy" onerror="this.style.display='none'">`
         : `<div class="rp-card-img-placeholder"></div>`;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Compare page: side-by-side bowling ball comparison
 
 let allBalls = [];
@@ -25,9 +26,9 @@ const COMPARE_FIELDS = [
     { key: 'coverstock_type', label: 'Coverstock Type', type: 'text', accessor: b => b.coverstock_type || '—' },
 
     { section: 'Performance Ratings' },
-    { key: 'hook_potential',   label: 'Hook Potential',    type: 'bar', accessor: b => b.hook_potential },
-    { key: 'early_v_late',     label: 'Early vs. Late',    type: 'bar', accessor: b => b.early_v_late },
-    { key: 'smooth_v_angular', label: 'Smooth vs. Angular',type: 'bar', accessor: b => b.smooth_v_angular },
+    { key: 'hook_potential',   label: 'Hook Potential',    type: 'spec', accessor: (b, w) => getSpec(b, w, 'hook_potential') },
+    { key: 'early_v_late',     label: 'Early vs. Late',    type: 'spec', accessor: (b, w) => getSpec(b, w, 'early_v_late') },
+    { key: 'smooth_v_angular', label: 'Smooth vs. Angular',type: 'spec', accessor: (b, w) => getSpec(b, w, 'smooth_v_angular') },
 
     { section: 'Specs' },
     { key: 'rg',      label: 'Radius of Gyration', type: 'spec', accessor: (b, w) => getSpec(b, w, 'rg') },
@@ -180,10 +181,10 @@ function renderComparison() {
             html += `<td class="ct-value">${v1 ?? '—'}</td>`;
             html += `<td class="ct-value">${v2 ?? '—'}</td>`;
         } else {
-            // Bar cells — width relative to the max of the two values
-            const maxVal = Math.max(v1 ?? 0, v2 ?? 0);
-            html += `<td class="ct-value">${barCell(v1, maxVal)}</td>`;
-            html += `<td class="ct-value">${barCell(v2, maxVal)}</td>`;
+            const diff1 = (v1 != null && v2 != null) ? v1 - v2 : null;
+            const diff2 = (v1 != null && v2 != null) ? v2 - v1 : null;
+            html += `<td class="ct-value">${barCell(v1, diff1)}</td>`;
+            html += `<td class="ct-value">${barCell(v2, diff2)}</td>`;
         }
 
         html += '</tr>';
@@ -205,14 +206,19 @@ function ballHeader(ball) {
            (ball.brand ? `<div class="ct-ball-brand">${ball.brand}</div>` : '');
 }
 
-function barCell(value, maxVal) {
+function barCell(value, diff) {
     if (value == null) return '<span class="ct-nodata">—</span>';
-    const pct = maxVal > 0 ? Math.round((value / maxVal) * 100) : 100;
     const display = Number.isInteger(value) ? value : parseFloat(value.toFixed(4));
-    return `<div class="ct-bar-row">` +
-               `<div class="ct-bar-bg"><div class="ct-bar-fill" style="width:${pct}%"></div></div>` +
-               `<span class="ct-bar-val">${display}</span>` +
-           `</div>`;
+
+    let diffHtml = '';
+    if (diff != null) {
+        const diffDisplay = Number.isInteger(diff) ? diff : parseFloat(diff.toFixed(4));
+        const sign = diff > 0 ? '+' : '';
+        const cls  = diff > 0 ? 'ct-diff-pos' : diff < 0 ? 'ct-diff-neg' : 'ct-diff-zero';
+        diffHtml = ` <span class="${cls}">(${sign}${diffDisplay})</span>`;
+    }
+
+    return `<span class="ct-bar-val">${display}${diffHtml}</span>`;
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────

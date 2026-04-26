@@ -1,4 +1,4 @@
-/* global FilterPanel */
+// @ts-nocheck — plain browser script; globals (FilterPanel) loaded via separate <script> tags
 // Canvas and drawing for plotting the scatter/grid
 const gridCanvas = document.getElementById('gridCanvas');
 const ctx = gridCanvas.getContext('2d');
@@ -26,6 +26,24 @@ let selectedIndex = null;    // index of the currently selected ball (or null)
 /** @type {any} FilterPanel instance, built after data loads (class loaded via script tag) */
 let filterPanel  = null;
 
+// Table sort state
+let sortField = null;   // null | 'name' | AXIS_FIELDS[*].value
+let sortDir   = 'asc';  // 'asc' | 'desc'
+
+// Outlier filter state
+let ignoreOutliers = false;
+
+// Returns { min, max } bounds for field values within ±1 std dev, or null if not enough data.
+function computeOutlierBounds(balls, weight, fieldKey) {
+    const fieldDef = AXIS_FIELDS.find(f => f.value === fieldKey);
+    if (!fieldDef) return null;
+    const vals = balls.map(b => fieldDef.accessor(b, weight)).filter(v => v != null);
+    if (vals.length < 2) return null;
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const std  = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length);
+    return { min: mean - std, max: mean + std };
+}
+
 // Fixed axis field definitions: value = option key, label = display name,
 // accessor(ball, selectedWeight) returns the numeric value to plot.
 const AXIS_FIELDS = [
@@ -37,6 +55,64 @@ const AXIS_FIELDS = [
     { value: 'early_v_late',     label: 'Early vs. Late',       accessor: (b, w) => getSpec(b, w, 'early_v_late') },
     { value: 'smooth_v_angular', label: 'Smooth vs. Angular',   accessor: (b, w) => getSpec(b, w, 'smooth_v_angular') },
 ];
+
+// Draw numeric tick labels on the canvas X and Y axes.
+function drawAxisLabels(xMin, xMax, yMin, yMax) {
+    const padding   = 40;
+    const TICKS     = 5;
+    const isDark    = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#aaa' : '#555';
+    const tickColor = isDark ? '#666' : '#bbb';
+
+    const xRange = xMax - xMin || 1;
+    const yRange = yMax - yMin || 1;
+
+    function fmt(val, range) {
+        if (range > 100) return Math.round(val).toString();
+        if (range > 10)  return val.toFixed(0);
+        if (range > 1)   return val.toFixed(1);
+        if (range > 0.1) return val.toFixed(2);
+        return val.toFixed(3);
+    }
+
+    ctx.save();
+    ctx.font      = '10px sans-serif';
+    ctx.fillStyle = textColor;
+
+    // Y axis — labels on the left, tick marks touching the axis line
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= TICKS; i++) {
+        const frac = i / TICKS;
+        const val  = yMin + frac * yRange;
+        const y    = gridCanvas.height - padding - frac * (gridCanvas.height - 2 * padding);
+        ctx.fillText(fmt(val, yRange), padding - 6, y);
+        ctx.strokeStyle = tickColor;
+        ctx.lineWidth   = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding - 3, y);
+        ctx.lineTo(padding,     y);
+        ctx.stroke();
+    }
+
+    // X axis — labels below the bottom axis line
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i <= TICKS; i++) {
+        const frac = i / TICKS;
+        const val  = xMin + frac * xRange;
+        const x    = padding + frac * (gridCanvas.width - 2 * padding);
+        ctx.fillText(fmt(val, xRange), x, gridCanvas.height - padding + 4);
+        ctx.strokeStyle = tickColor;
+        ctx.lineWidth   = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, gridCanvas.height - padding);
+        ctx.lineTo(x, gridCanvas.height - padding + 3);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
 
 // Return a spec field value for a given ball and weight, or null if not available.
 function getSpec(ball, weight, field) {
@@ -109,6 +185,12 @@ async function fetchData() {
     // Resolve the weight select now that FilterPanel has rendered it
     weightSelect = document.getElementById('weight-select');
     weightSelect.addEventListener('change', () => { drawGrid(); renderTable(); });
+
+    document.getElementById('ignore-outliers').addEventListener('change', e => {
+        ignoreOutliers = e.target.checked;
+        drawGrid();
+        renderTable();
+    });
 
     drawGrid();
     console.log('fetchData: loaded', bowlingBalls.length, 'balls');
@@ -219,9 +301,23 @@ function plotBowlingBalls(xField, yField) {
     bowlingBalls.forEach(b => { b._x = null; b._y = null; });
 
     // Only plot balls that pass the active filters
-    const visible = filterPanel
+    let visible = filterPanel
         ? bowlingBalls.filter(b => filterPanel.passes(b, selectedWeight))
         : bowlingBalls;
+
+    if (ignoreOutliers) {
+        const xBounds = computeOutlierBounds(visible, selectedWeight, xField);
+        const yBounds = computeOutlierBounds(visible, selectedWeight, yField);
+        if (xBounds && yBounds) {
+            visible = visible.filter(b => {
+                const xv = xDef ? xDef.accessor(b, selectedWeight) : null;
+                const yv = yDef ? yDef.accessor(b, selectedWeight) : null;
+                return xv != null && yv != null &&
+                       xv >= xBounds.min && xv <= xBounds.max &&
+                       yv >= yBounds.min && yv <= yBounds.max;
+            });
+        }
+    }
 
     const allX = visible.map(b => xDef ? xDef.accessor(b, selectedWeight) : null);
     const allY = visible.map(b => yDef ? yDef.accessor(b, selectedWeight) : null);
@@ -232,33 +328,46 @@ function plotBowlingBalls(xField, yField) {
     const xMin = Math.min(...validX), xMax = Math.max(...validX);
     const yMin = Math.min(...validY), yMax = Math.max(...validY);
 
+    drawAxisLabels(xMin, xMax, yMin, yMax);
+
+    // First pass: compute canvas coordinates for all visible balls.
     visible.forEach((ball, i) => {
         const xVal = allX[i];
         const yVal = allY[i];
-        const idx  = bowlingBalls.indexOf(ball);
-
         if (xVal == null || yVal == null) return;
 
         const xRatio = (xMax === xMin) ? 0.5 : (xVal - xMin) / (xMax - xMin);
         const yRatio = (yMax === yMin) ? 0.5 : (yVal - yMin) / (yMax - yMin);
 
-        const x = padding + xRatio * (gridCanvas.width - 2 * padding);
-        const y = gridCanvas.height - padding - yRatio * (gridCanvas.height - 2 * padding);
+        ball._x = padding + xRatio * (gridCanvas.width  - 2 * padding);
+        ball._y = gridCanvas.height - padding - yRatio * (gridCanvas.height - 2 * padding);
+    });
 
-        ball._x = x;
-        ball._y = y;
-
+    // Second pass: draw unselected balls first so the selected ball always
+    // renders on top regardless of its position in the data array.
+    visible.forEach(ball => {
+        const idx = bowlingBalls.indexOf(ball);
+        if (ball._x == null || ball._y == null || idx === selectedIndex) return;
         ctx.beginPath();
-        ctx.arc(x, y, (selectedIndex === idx) ? 9 : 6, 0, 2 * Math.PI);
-        ctx.fillStyle = (selectedIndex === idx) ? '#ff4444' : '#0077cc';
+        ctx.arc(ball._x, ball._y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = '#0077cc';
         ctx.fill();
-        if (selectedIndex === idx) {
+    });
+
+    // Third pass: draw the selected ball on top.
+    if (selectedIndex !== null) {
+        const sel = bowlingBalls[selectedIndex];
+        if (sel && sel._x != null && sel._y != null) {
+            ctx.beginPath();
+            ctx.arc(sel._x, sel._y, 9, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ff4444';
+            ctx.fill();
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#cc0000';
             ctx.stroke();
             ctx.lineWidth = 1;
         }
-    });
+    }
 }
 
 // Render an HTML table of `bowlingBalls` under the canvas. Clicking a row
@@ -271,9 +380,29 @@ function renderTable() {
     const selectedWeight = parseInt(weightSelect.value, 10);
 
     // Apply active filters; preserve original indices for selection
-    const filteredIndices = filterPanel
+    let filteredIndices = filterPanel
         ? bowlingBalls.map((_, i) => i).filter(i => filterPanel.passes(bowlingBalls[i], selectedWeight))
         : bowlingBalls.map((_, i) => i);
+
+    if (ignoreOutliers) {
+        const xField   = xAxisSelect.value;
+        const yField   = yAxisSelect.value;
+        const visibles = filteredIndices.map(i => bowlingBalls[i]);
+        const xBounds  = computeOutlierBounds(visibles, selectedWeight, xField);
+        const yBounds  = computeOutlierBounds(visibles, selectedWeight, yField);
+        if (xBounds && yBounds) {
+            const xDef = AXIS_FIELDS.find(f => f.value === xField);
+            const yDef = AXIS_FIELDS.find(f => f.value === yField);
+            filteredIndices = filteredIndices.filter(i => {
+                const b  = bowlingBalls[i];
+                const xv = xDef ? xDef.accessor(b, selectedWeight) : null;
+                const yv = yDef ? yDef.accessor(b, selectedWeight) : null;
+                return xv != null && yv != null &&
+                       xv >= xBounds.min && xv <= xBounds.max &&
+                       yv >= yBounds.min && yv <= yBounds.max;
+            });
+        }
+    }
 
     // Update "Showing X of Y" counter
     const countEl = document.getElementById('ball-count');
@@ -283,17 +412,47 @@ function renderTable() {
             : `(${bowlingBalls.length})`;
     }
 
+    // Sort filteredIndices before rendering
+    if (sortField) {
+        filteredIndices.sort((a, b) => {
+            let va, vb;
+            if (sortField === 'name') {
+                va = (bowlingBalls[a].name || '').toLowerCase();
+                vb = (bowlingBalls[b].name || '').toLowerCase();
+            } else {
+                const fieldDef = AXIS_FIELDS.find(f => f.value === sortField);
+                va = fieldDef ? fieldDef.accessor(bowlingBalls[a], selectedWeight) : null;
+                vb = fieldDef ? fieldDef.accessor(bowlingBalls[b], selectedWeight) : null;
+                if (va == null && vb == null) return 0;
+                if (va == null) return 1;
+                if (vb == null) return -1;
+            }
+            if (va < vb) return sortDir === 'asc' ? -1 : 1;
+            if (va > vb) return sortDir === 'asc' ?  1 : -1;
+            return 0;
+        });
+    }
+
+    function makeSortTh(label, key) {
+        const th = document.createElement('th');
+        th.className = 'sortable-th';
+        th.textContent = label;
+        if (sortField === key) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+        th.addEventListener('click', () => {
+            if (sortField === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            else { sortField = key; sortDir = 'asc'; }
+            renderTable();
+        });
+        return th;
+    }
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    const nameTh = document.createElement('th');
-    nameTh.textContent = 'Name';
-    headerRow.appendChild(nameTh);
-    AXIS_FIELDS.forEach(field => {
-        const th = document.createElement('th');
-        th.textContent = field.label;
-        headerRow.appendChild(th);
-    });
+    headerRow.appendChild(makeSortTh('Name', 'name'));
+    AXIS_FIELDS.forEach(field => headerRow.appendChild(makeSortTh(field.label, field.value)));
+    // Empty header for the detail-button column
+    headerRow.appendChild(document.createElement('th'));
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
@@ -303,20 +462,36 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.dataset.index = idx;
         if (selectedIndex === idx) tr.classList.add('selected-row');
+
         const nameTd = document.createElement('td');
         nameTd.textContent = ball.name || '';
         tr.appendChild(nameTd);
+
         AXIS_FIELDS.forEach(field => {
             const td = document.createElement('td');
             const val = field.accessor(ball, selectedWeight);
             td.textContent = (val !== null && val !== undefined) ? val : '—';
             tr.appendChild(td);
         });
-        tr.addEventListener('click', () => {
+
+        // Three-dots cell — opens the ball detail pop-up without selecting
+        const dotsTd = document.createElement('td');
+        dotsTd.className = 'row-detail-cell';
+        const dotsBtn = document.createElement('button');
+        dotsBtn.className = 'row-detail-btn';
+        dotsBtn.setAttribute('aria-label', `Details for ${ball.name || 'ball'}`);
+        dotsBtn.textContent = '⋮';
+        dotsBtn.addEventListener('click', e => {
+            e.stopPropagation();
             if (typeof window.showBallDetail === 'function') {
-                window.showBallDetail(bowlingBalls[idx]);
+                window.showBallDetail(ball);
             }
         });
+        dotsTd.appendChild(dotsBtn);
+        tr.appendChild(dotsTd);
+
+        // Row click highlights the ball on the grid
+        tr.addEventListener('click', () => selectBall(idx));
         tbody.appendChild(tr);
     });
     table.appendChild(tbody);

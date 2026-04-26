@@ -1,0 +1,15 @@
+{
+    "name":"frontend",
+    "version":"1.0.0.beta",
+    "author": "",
+    "dependencies": {
+        "express": "5.2.1",
+        "path": "0.12.7",
+        "cors": "2.8.6",
+        "ejs": "5.0.1"
+    },
+    "main":"frontendStartup.js",
+    "scripts":{
+        "start": "dev=dev node --max-old-space-size=4096 utils/frontendStartup.js"
+    }
+}
