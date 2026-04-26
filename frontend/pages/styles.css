@@ -201,7 +201,7 @@ header h1 {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     padding: 10px;
-    flex: 1;
+    flex: 2;
     min-width: 300px;
     display: flex;
     flex-direction: column;
@@ -248,7 +248,7 @@ canvas {
     background: var(--bg-secondary);
     padding: 12px;
     border: 1px solid var(--border-color);
-    flex: 1;
+    flex: 3;
     min-width: 300px;
     max-height: 700px;
     border-radius: 4px;
