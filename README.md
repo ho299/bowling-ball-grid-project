@@ -3,11 +3,11 @@ ECE50874 - Bowling Ball grid project repo
 
 ## Overview
 
-This app plots bowling balls on a configurable scatter grid and uses physics-derived scores to recommend replacements and identify arsenal gaps. The database holds 1,000+ balls with manufacturer specs (RG, differential, mass bias differential, factory finish) seeded from a CSV.
+This app plots bowling balls on a configurable scatter grid and uses physics-derived scores to recommend replacements and identify arsenal gaps. The database holds 1,000+ balls with manufacturer specs (RG, differential, mass bias differential, factory finish) seeded from a datascraping operation.
 
 **Pages**
 
-- **Homepage** — Scatter plot with selectable X/Y axes: Radius of Gyration, Differential, MB Differential, Hook Potential, Early vs. Late, Smooth vs. Angular, Release Year. An optional outlier filter hides balls outside ±1 standard deviation of the plotted field.
+- **Homepage** — Scatter plot with selectable X/Y axes: Radius of Gyration, Differential, MB Differential, Hook Potential, Early vs. Late, Smooth vs. Angular, Release Year. An optional outlier filter hides balls outside one standard deviation of the plotted field.
 - **Compare** — Side-by-side table of two balls' raw specs and computed scores.
 - **Arsenal** — Personal ball collection persisted to browser `localStorage`.
 - **Replace** — Finds the closest replacement for a selected ball, or identifies the best addition to fill a gap in an existing arsenal.
@@ -25,8 +25,6 @@ Factory finish strings (e.g., `"2000 Grit Polished"`) are parsed to a numeric sc
 **Replacement and gap-finder**
 
 The replacement finder computes Euclidean distance in the three-score space (Hook Potential, Early vs. Late, Smooth vs. Angular) between the target ball and all other balls at the same weight, returning the five closest. The gap finder inverts this: for each candidate ball it finds the minimum distance to any ball in the arsenal. Balls with the greatest minimum distance fill the largest performance gap and rank highest.
-
-# TODO
 
 ---
 
