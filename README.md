@@ -1,6 +1,31 @@
 # bowling-ball-grid-project
 ECE50874 - Bowling Ball grid project repo
 
+## Overview
+
+This app plots bowling balls on a configurable scatter grid and uses physics-derived scores to recommend replacements and identify arsenal gaps. The database holds 1,000+ balls with manufacturer specs (RG, differential, mass bias differential, factory finish) seeded from a CSV.
+
+**Pages**
+
+- **Homepage** — Scatter plot with selectable X/Y axes: Radius of Gyration, Differential, MB Differential, Hook Potential, Early vs. Late, Smooth vs. Angular, Release Year. An optional outlier filter hides balls outside ±1 standard deviation of the plotted field.
+- **Compare** — Side-by-side table of two balls' raw specs and computed scores.
+- **Arsenal** — Personal ball collection persisted to browser `localStorage`.
+- **Replace** — Finds the closest replacement for a selected ball, or identifies the best addition to fill a gap in an existing arsenal.
+
+**Scoring algorithms**
+
+Three scores are pre-computed per ball spec and stored in the `specs` table. They accept RG (2.44–2.75), differential (0–0.062), mass bias differential (0–0.037), and a numeric surface finish value.
+
+- **Hook Potential (0–100):** A nonlinear formula where higher differential, higher MB diff, and lower RG all increase hook. Factory finish applies a sinusoidal correction that models the difference between abraded and polished surfaces.
+- **Early vs. Late (0 = early, 100 = late):** Captures how far down the lane the ball transitions from skid to roll. Lower RG and more aggressive surface produce earlier transition; higher finish number delays it.
+- **Smooth vs. Angular (0–100):** Describes sharpness of the backend reaction. Higher RG and lower differential produce smooth arcs; more mass bias and aggressive surface produce sharper angles.
+
+Factory finish strings (e.g., `"2000 Grit Polished"`) are parsed to a numeric scale before scoring. Polished surfaces add 5000 to the grit number. Spare balls (polyester/plastic coverstocks) are excluded and assigned a sentinel value of 90000, which causes all three scores to return 0.
+
+**Replacement and gap-finder**
+
+The replacement finder computes Euclidean distance in the three-score space (Hook Potential, Early vs. Late, Smooth vs. Angular) between the target ball and all other balls at the same weight, returning the five closest. The gap finder inverts this: for each candidate ball it finds the minimum distance to any ball in the arsenal. Balls with the greatest minimum distance fill the largest performance gap and rank highest.
+
 # TODO
 
 ---
