@@ -1,2 +1,4 @@
 scratch_notes.txt
 node-modules/
+.env.local
+.env.*.local
