@@ -1,8 +1,10 @@
 const express = require('express');
 const app = express();
+const { generalLimiter } = require('./middleware/rate_limit');
 
 // ── Middleware ─────────────────────────────────────────────────────
 app.use(express.json());
+app.use('/api', generalLimiter);
 
 // ── Routes ────────────────────────────────────────────────────────
 const ballRoutes            = require('./routes/ball_routes');

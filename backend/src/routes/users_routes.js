@@ -3,11 +3,12 @@ const algorithm = require("../../algorithms/bowlingBallScoreAlgos")
 const router = express.Router();
 const userQueries = require('../queries/users_queries'); // calling sql queries
 const bcrypt = require('bcrypt');
+const { authLimiter } = require('../middleware/rate_limit');
 
 //CREATE
 // POST /api/user — create a user
 // ✅ this registers the route
-router.post('/', async (req, res) => {
+router.post('/', authLimiter, async (req, res) => {
     try {
         const { first_name, last_name, about = null, email, password } = req.body;
 
@@ -22,7 +23,7 @@ router.post('/', async (req, res) => {
 });
 
 // POST /api/user/login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 
