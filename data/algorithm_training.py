@@ -39,7 +39,9 @@ BEST_PROXY_PARAMS = {
     "hook_length_range_mid":     {"max_bins": 16, "interactions": 2, "min_samples_leaf": 10},
     "ball_shape_range_mid":      {"max_bins": 16, "interactions": 1, "min_samples_leaf": 5},
 }
-
+BEST_ALGO_PARAMS = { "hook_potential": {'max_bins': 64, 'interactions': 2, 'min_samples_leaf': 5},
+                     "early_vs_late": {'max_bins': 64, 'interactions': 2, 'min_samples_leaf': 10},
+                     "smooth_vs_angular": {'max_bins': 64, 'interactions': 2, 'min_samples_leaf': 10}}
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -328,10 +330,12 @@ def train_algo(df, algo_name, prod_features, verbose=True,
     sub = df[feats + [target]].dropna(subset=[target])
     X   = impute_median(sub[feats], feats)
     y   = sub[target].values
-
+    print(X.columns.tolist())
     ebm = ExplainableBoostingRegressor(
         max_bins=max_bins, interactions=interactions,
-        min_samples_leaf=min_samples_leaf, random_state=42
+        min_samples_leaf=min_samples_leaf, random_state=42,
+        monotone_constraints=[+1, -1, +1, 0]
+
     )
 
     loo_preds = np.zeros(len(y))
@@ -600,17 +604,17 @@ if __name__ == "__main__":
     # ── Main model grid search ────────────────────────────────
     # Tune all three algos on proxy-augmented D1
     print("\nRunning main model hyperparameter grid search on D1...")
-    algo_params = {}
-    for algo_name in ALGO_CONFIG:
-        algo_params[algo_name] = tune_hyperparameters(df1_with_proxy, algo_name, PROD_FEATURES)
 
-    # ── Fair comparison ───────────────────────────────────────
-    # Both sides use same tuned params — only variable is proxy features
-    baseline_models = compare_proxy_vs_baseline(df1_with_proxy, PROD_FEATURES, algo_params)
+    # for algo_name in ALGO_CONFIG:
+    #     algo_params[algo_name] = tune_hyperparameters(df1_with_proxy, algo_name, PROD_FEATURES)
 
+    # # ── Fair comparison ───────────────────────────────────────
+    # # Both sides use same tuned params — only variable is proxy features
+    # baseline_models = compare_proxy_vs_baseline(df1_with_proxy, PROD_FEATURES, algo_params)
+    baseline_models = None  # skip fair comparison for now — just train final models with proxy features
     # ── Train final models ────────────────────────────────────
     print("\nTraining final production models with tuned hyperparameters...")
-    models = train_all(df1_with_proxy, PROD_FEATURES, algo_params=algo_params, verbose=True)
+    models = train_all(df1_with_proxy, PROD_FEATURES, algo_params=BEST_ALGO_PARAMS, verbose=True)
 
     # ── Feature importance ────────────────────────────────────
     print("\n" + "=" * 55)
