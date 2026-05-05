@@ -26,15 +26,16 @@ function parseNameFromUrl(url) {
 
 function parseSpec(specString) {
     if (!specString || specString.trim() === '' || specString.trim() === 'NULL') return null;  // ← add NULL check
+    const cleaned = specString
+        .replace(/'/g, '"')
+        .replace(/MB Diff/g, 'MB_Diff')
+        .replace(/"MB_Diff": None/g, '"MB_Diff": 0');
     try {
-        const cleaned = specString
-            .replace(/'/g, '"')
-            .replace(/MB Diff/g, 'MB_Diff');
         const parsed = JSON.parse(cleaned);
         return {
             rg:      (parsed.RG      === 'NULL' || parsed.RG      == null) ? null : parsed.RG,
             diff:    (parsed.Diff    === 'NULL' || parsed.Diff    == null) ? null : parsed.Diff,
-            mb_diff: (parsed.MB_Diff === 'NULL' || parsed.MB_Diff == null) ? null : parsed.MB_Diff
+            mb_diff: (parsed.MB_Diff === 'NULL' || parsed.MB_Diff == null) ? null : parsed.MB_Diff === 'None' ? 0 : parsed.MB_Diff
         };
     } catch (e) {
         return null;
@@ -74,10 +75,9 @@ async function seed() {
             // --- Parse specs (weights 12–16) ---
             const weightMap = { spec_12: 12, spec_13: 13, spec_14: 14, spec_15: 15, spec_16: 16 };
             const parsedSpecs = [];
-
             for (const [key, weight] of Object.entries(weightMap)) {
                 const spec = parseSpec(row[key]);
-                if (spec && spec.rg && spec.diff && spec.mb_diff) {
+                if (spec && spec.rg && spec.diff && spec.mb_diff!=null) {
                     const finishNumber = algorithm.finishNametoNumber(row.factory_finish, row.coverstock);
                     const bowlingBall = {
                         rg:             spec.rg,
