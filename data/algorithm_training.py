@@ -41,6 +41,13 @@ BEST_PROXY_PARAMS = {
 }
 
 
+BEST_ALGO_PARAMS = {
+    "hook_potential":        {"max_bins": 64, "interactions": 2, "min_samples_leaf": 5},
+    "early_vs_late":         {"max_bins": 32, "interactions": 2, "min_samples_leaf": 10},
+    "smooth_vs_angular":     {"max_bins": 64, "interactions": 2, "min_samples_leaf": 10}
+}
+
+
 # ─────────────────────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────────────────────
@@ -319,6 +326,16 @@ def apply_proxy_features(df1, proxy_models, feature_cols):
 # TRAIN (single algo)
 # ─────────────────────────────────────────────────────────────
 
+MONOTONE_CONSTRAINTS = {
+    "early_vs_late": {
+        "rg":      1,
+        "diff":   -1,
+        "int_diff": -1,
+        "finish":  1,
+    }
+    # add others later
+}
+
 def train_algo(df, algo_name, prod_features, verbose=True,
                max_bins=64, interactions=2, min_samples_leaf=3):
     cfg    = ALGO_CONFIG[algo_name]
@@ -329,17 +346,30 @@ def train_algo(df, algo_name, prod_features, verbose=True,
     X   = impute_median(sub[feats], feats)
     y   = sub[target].values
 
-    ebm = ExplainableBoostingRegressor(
-        max_bins=max_bins, interactions=interactions,
-        min_samples_leaf=min_samples_leaf, random_state=42
+
+
+    # Build monotone constraint list aligned to feature order
+    algo_constraints = MONOTONE_CONSTRAINTS.get(algo_name, {})
+    monotone = [algo_constraints.get(f, 0) for f in feats]  # 0 = unconstrained
+
+        # ── Inspect column order ──────────────────────────────────────
+    print("X columns (order matters for monotone_constraints):")
+    for i, col in enumerate(X.columns):
+        constraint = algo_constraints.get(col, 0)
+        marker = {1: "↑ +1", -1: "↓ -1", 0: "  (unconstrained)"}.get(constraint, "")
+        print(f"  [{i:2d}] {col:<30} {marker}")
+
+    ebm_kwargs = dict(
+        max_bins=max_bins,
+        interactions=interactions,
+        min_samples_leaf=min_samples_leaf,
+        random_state=42,
+        monotone_constraints=monotone,   # <-- list must match feats order
     )
 
     loo_preds = np.zeros(len(y))
     for tr, te in LeaveOneOut().split(X):
-        tmp = ExplainableBoostingRegressor(
-            max_bins=max_bins, interactions=interactions,
-            min_samples_leaf=min_samples_leaf, random_state=42
-        )
+        tmp = ExplainableBoostingRegressor(**ebm_kwargs)
         tmp.fit(X.iloc[tr], y[tr])
         loo_preds[te] = tmp.predict(X.iloc[te])
 
@@ -347,14 +377,16 @@ def train_algo(df, algo_name, prod_features, verbose=True,
     mae   = np.mean(np.abs(y - loo_preds))
 
     if verbose:
+        constrained = [f for f, c in zip(feats, monotone) if c != 0]
         print(f"  LOO Spearman={r:.3f}  MAE={mae:.2f}")
+        print(f"  Constrained features: {constrained}")
 
+    ebm = ExplainableBoostingRegressor(**ebm_kwargs)
     ebm.fit(X, y)
     scaler = MinMaxScaler(feature_range=(0, 100))
     scaler.fit(y.reshape(-1, 1))
 
     return {"model": ebm, "scaler": scaler, "features": feats, "spearman": r, "mae": mae}
-
 
 # ─────────────────────────────────────────────────────────────
 # TUNE (grid search on D1 for a single algo)
@@ -456,8 +488,14 @@ def train_all(df, prod_features, algo_params=None, verbose=True):
     Falls back to defaults for any algo not in dict.
     """
     algo_params = algo_params or {}
+    
     models = {}
-    for algo_name in ALGO_CONFIG:
+    ACTIVE_ALGOS = ["early_vs_late"]  # toggle this at the top of your script
+
+    # Then anywhere you loop over ALGO_CONFIG, filter it:
+    for algo_name in [a for a in ALGO_CONFIG if a in ACTIVE_ALGOS]:
+    
+    # for algo_name in ALGO_CONFIG:
         if verbose:
             print(f"\n{'='*55}\n  {algo_name.upper()}  |  "
                   f"target={ALGO_CONFIG[algo_name]['target']}  n={len(df)}\n{'='*55}")
@@ -470,7 +508,7 @@ def train_all(df, prod_features, algo_params=None, verbose=True):
 # SAVE / LOAD  (main models)
 # ─────────────────────────────────────────────────────────────
 
-def save_models(models, proxy_models, prod_features,
+def save_models(models, proxy_models=None, prod_features=None,
                 baseline_models=None, algo_params=None, output_dir="models"):
     """
     Saves production models, proxy models reference, baseline models, and hyperparams.
@@ -485,9 +523,9 @@ def save_models(models, proxy_models, prod_features,
         "baseline_models": baseline_models,
         "base_features":   BASE_PROD_FEATURES,
         "algo_params":     algo_params,
-    }, os.path.join(output_dir, "ball_algo_models.joblib"))
+    }, os.path.join(output_dir, "contraint_eva_models.joblib"))
 
-    print(f"\nModels saved to {output_dir}/ball_algo_models.joblib")
+    print(f"\nModels saved to {output_dir}/contraint_eva_models.joblib")
     if algo_params:
         print("\n  Saved hyperparameters:")
         for algo, params in algo_params.items():
@@ -532,9 +570,9 @@ def predict_ball(models, proxy_models, feat1_rg, feat2_diff, feat3_int_diff, fea
     Proxy values are computed internally from the four base features.
     """
     base = {"rg": feat1_rg, "diff": feat2_diff, "int_diff": feat3_int_diff, "finish": feat4_finish}
-    X_base = pd.DataFrame([base])
-    for proxy_col, pm in proxy_models.items():
-        base[f"{proxy_col}_proxy"] = pm["model"].predict(X_base)[0]
+    # X_base = pd.DataFrame([base])
+    # for proxy_col, pm in proxy_models.items():
+    #     base[f"{proxy_col}_proxy"] = pm["model"].predict(X_base)[0]
 
     X = pd.DataFrame([base])
     scores = {}
@@ -553,7 +591,7 @@ def predict_ball(models, proxy_models, feat1_rg, feat2_diff, feat3_int_diff, fea
 if __name__ == "__main__":
 
     DS1_PATH    = "validation_data.json"
-    DS2_PATH    = "storm_bowling_data.json"
+    # DS2_PATH    = "storm_bowling_data.json"
     MODEL_DIR   = "models"
     PROXY_PATH  = os.path.join(MODEL_DIR, "proxy_models.joblib")
 
@@ -561,13 +599,13 @@ if __name__ == "__main__":
         subset=["length", "backend", "hook", "rg", "diff", "int_diff", "finish"]
     ).reset_index(drop=True)
 
-    df2 = load_dataset2(DS2_PATH).dropna(
-        subset=["rg", "diff", "int_diff", "finish",
-                "ball_shape_range_mid", "hook_length_range_mid", "flare_potential_range_mid"]
-    ).reset_index(drop=True)
+    # df2 = load_dataset2(DS2_PATH).dropna(
+    #     subset=["rg", "diff", "int_diff", "finish",
+    #             "ball_shape_range_mid", "hook_length_range_mid", "flare_potential_range_mid"]
+    # ).reset_index(drop=True)
 
     print(f"Dataset 1 : {len(df1)} rows")
-    print(f"Dataset 2 : {len(df2)} rows")
+    # print(f"Dataset 2 : {len(df2)} rows")
 
     # ── Proxy models ──────────────────────────────────────────
     # Grid search is commented out — best params already in BEST_PROXY_PARAMS.
@@ -578,50 +616,51 @@ if __name__ == "__main__":
     # print("\nCopy these into BEST_PROXY_PARAMS at the top of the file:")
     # print(found_proxy_params)
 
-    if os.path.exists(PROXY_PATH):
-        # Load previously trained proxy models — no retraining needed
-        print("\nLoading saved proxy models...")
-        proxy_models, proxy_feature_cols = load_proxy_models(MODEL_DIR)
-    else:
-        # First run — train and save proxy models using best known params
-        print("\nNo saved proxy models found. Training and saving proxy models...")
-        proxy_models = build_and_save_proxy_models(
-            df2, BASE_PROD_FEATURES, BEST_PROXY_PARAMS, MODEL_DIR
-        )
+    # if os.path.exists(PROXY_PATH):
+    #     # Load previously trained proxy models — no retraining needed
+    #     print("\nLoading saved proxy models...")
+    #     proxy_models, proxy_feature_cols = load_proxy_models(MODEL_DIR)
+    # else:
+    #     # First run — train and save proxy models using best known params
+    #     print("\nNo saved proxy models found. Training and saving proxy models...")
+    #     proxy_models = build_and_save_proxy_models(
+    #         df2, BASE_PROD_FEATURES, BEST_PROXY_PARAMS, MODEL_DIR
+    #     )
 
-    # Generate proxy feature columns for all D1 rows
-    df1_with_proxy = apply_proxy_features(df1, proxy_models, BASE_PROD_FEATURES)
+    # # Generate proxy feature columns for all D1 rows
+    # df1_with_proxy = apply_proxy_features(df1, proxy_models, BASE_PROD_FEATURES)
 
-    PROD_FEATURES = BASE_PROD_FEATURES + [
-        f"{cfg['proxy']}_proxy" for cfg in ALGO_CONFIG.values()
-    ]
-    print(f"\nProduction features: {PROD_FEATURES}")
+    # PROD_FEATURES = BASE_PROD_FEATURES + [
+    #     f"{cfg['proxy']}_proxy" for cfg in ALGO_CONFIG.values()
+    # ]
+    # print(f"\nProduction features: {PROD_FEATURES}")
 
-    # ── Main model grid search ────────────────────────────────
-    # Tune all three algos on proxy-augmented D1
-    print("\nRunning main model hyperparameter grid search on D1...")
-    algo_params = {}
-    for algo_name in ALGO_CONFIG:
-        algo_params[algo_name] = tune_hyperparameters(df1_with_proxy, algo_name, PROD_FEATURES)
+    # # ── Main model grid search ────────────────────────────────
+    # # Tune all three algos on proxy-augmented D1
+    # print("\nRunning main model hyperparameter grid search on D1...")
+    # algo_params = {}
+    # for algo_name in ALGO_CONFIG:
+    #     algo_params[algo_name] = tune_hyperparameters(df1_with_proxy, algo_name, PROD_FEATURES)
 
-    # ── Fair comparison ───────────────────────────────────────
-    # Both sides use same tuned params — only variable is proxy features
-    baseline_models = compare_proxy_vs_baseline(df1_with_proxy, PROD_FEATURES, algo_params)
+    # # ── Fair comparison ───────────────────────────────────────
+    # # Both sides use same tuned params — only variable is proxy features
+    # baseline_models = compare_proxy_vs_baseline(df1_with_proxy, PROD_FEATURES, algo_params)
 
-    # ── Train final models ────────────────────────────────────
-    print("\nTraining final production models with tuned hyperparameters...")
-    models = train_all(df1_with_proxy, PROD_FEATURES, algo_params=algo_params, verbose=True)
-
+    # # ── Train final models ────────────────────────────────────
+    # print("\nTraining final production models with tuned hyperparameters...")
+    # models = train_all(df1_with_proxy, PROD_FEATURES, algo_params=algo_params, verbose=True)
+    models = train_all(df1, BASE_PROD_FEATURES, algo_params=BEST_ALGO_PARAMS, verbose=True)
     # ── Feature importance ────────────────────────────────────
     print("\n" + "=" * 55)
     print_feature_importance(models)
-
+    joblib.dump(models, os.path.join(MODEL_DIR, "constraint_eva_models.joblib"))
     # ── Save ─────────────────────────────────────────────────
-    save_models(models, proxy_models, PROD_FEATURES, baseline_models, algo_params)
+    # save_models(models = models,algo_params = BEST_ALGO_PARAMS, output_dir=MODEL_DIR)
 
     # ── Example prediction ────────────────────────────────────
     scores = predict_ball(
-        models, proxy_models,
+        models, None,
+
         feat1_rg       = 2.58,
         feat2_diff     = 0.031,
         feat3_int_diff = 0.009,
